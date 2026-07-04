@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>🎮 原創怪獸學習冒險</title>
+<!-- ============================================================
+     原創怪獸學習冒險（單檔，iPad Safari 直接開，進度存 localStorage）
+     ● 三科世界(數學/國語/英文)＋地形分系：森林=陸、湖泊=海、高山=空
+     ● 陸海空相剋：空剋陸、陸剋海、海剋空；剋到對方 → 對方受傷 +30%
+     ● 99 種原創怪獸(陸海空各33)×10級=990 圖鑑格；怪獸即時生成 SVG(檔案小、跑得順)
+     ● 學習核心：抓怪與對戰都要答對題目；戰勝同級 5 次 → 升 1 級
+     ● 想換成自己的圖：見下方 SPECIES_IMAGES 說明
+     ============================================================ -->
+<style>
+  :root{
+    --g1-main:#f6b40e; --g1-accent:#2fae60; --g1-dark:#1f8a49;
+    --g3-main:#3a6df0; --g3-accent:#7c4dff; --g3-dark:#5c2fd6;
+    --ink:#2a2f45; --shadow:0 10px 30px rgba(0,0,0,.16); --radius:20px; --ok:#2fae60; --no:#e2433a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;margin:0;}
+  body{font-family:"PingFang TC","Heiti TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;color:var(--ink);
+    min-height:100dvh;overflow-x:hidden;user-select:none;-webkit-text-size-adjust:100%;background:linear-gradient(135deg,#fff6dd,#e7efff 55%,#efe8ff);}
+  body.theme-g1{--main:var(--g1-main);--accent:var(--g1-accent);--dark:var(--g1-dark);background:linear-gradient(135deg,#fff6dd,#e8fbe9);}
+  body.theme-g3{--main:var(--g3-main);--accent:var(--g3-accent);--dark:var(--g3-dark);background:linear-gradient(135deg,#e7efff,#efe8ff);}
+  button{font-family:inherit;cursor:pointer;}
+  .page{display:none;min-height:100dvh;padding:16px clamp(12px,3vw,40px);animation:fade .3s ease;}
+  .page.active{display:flex;flex-direction:column;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .btn{border:none;border-radius:999px;font-weight:900;font-size:clamp(15px,2.3vw,19px);padding:13px 24px;color:#fff;
+    background:linear-gradient(120deg,var(--main,#f6b40e),var(--accent,#2fae60));box-shadow:0 6px 16px rgba(0,0,0,.16);transition:transform .12s;}
+  .btn:active{transform:scale(.94);} .btn.ghost{background:#fff;color:var(--ink);box-shadow:0 4px 12px rgba(0,0,0,.1);}
+  .btn.big{font-size:clamp(17px,2.8vw,22px);padding:16px 30px;} .btn:disabled{opacity:.5;}
+  #page-home{align-items:center;justify-content:center;text-align:center;}
+  .home-title{font-size:clamp(26px,6vw,50px);font-weight:900;margin:0 0 4px;background:linear-gradient(90deg,#f6b40e,#2fae60,#3a6df0,#7c4dff);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .home-sub{font-size:clamp(14px,2.5vw,20px);color:#5a6072;font-weight:800;margin:0 0 26px;}
+  .card-wrap{display:flex;gap:clamp(14px,3vw,30px);flex-wrap:wrap;justify-content:center;width:100%;max-width:900px;}
+  .role-card{flex:1 1 300px;max-width:420px;min-height:250px;border:none;border-radius:var(--radius);padding:24px 20px;color:#fff;box-shadow:var(--shadow);transition:transform .16s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;}
+  .role-card:active{transform:scale(.96);} .role-card:hover{transform:translateY(-5px);}
+  .role-card .emoji{font-size:clamp(54px,10vw,86px);animation:floaty 3s ease-in-out infinite;}
+  .role-card .r-title{font-size:clamp(20px,3.4vw,28px);font-weight:900;}
+  .role-card .r-desc{font-size:clamp(13px,2.1vw,17px);font-weight:700;opacity:.95;}
+  .role-card .badge{font-size:14px;font-weight:900;background:rgba(255,255,255,.28);padding:5px 14px;border-radius:999px;}
+  @keyframes floaty{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
+  .card-g1{background:linear-gradient(150deg,var(--g1-main),var(--g1-accent));}
+  .card-g3{background:linear-gradient(150deg,var(--g3-main),var(--g3-accent));}
+  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+  .topbar .back{background:#fff;color:var(--ink);border:none;border-radius:999px;font-size:17px;font-weight:900;padding:9px 18px;box-shadow:0 4px 12px rgba(0,0,0,.1);}
+  .topbar .back:active{transform:scale(.94);}
+  .topbar h2{margin:0;font-size:clamp(17px,3vw,26px);font-weight:900;flex:1;min-width:120px;}
+  .pill{background:#fff;border-radius:999px;padding:6px 13px;font-weight:900;font-size:15px;box-shadow:0 4px 12px rgba(0,0,0,.1);white-space:nowrap;}
+  .menu-grid{display:flex;flex-direction:column;gap:12px;max-width:720px;width:100%;margin:4px auto;}
+  .menu-card{background:#fff;border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;border:3px solid transparent;transition:transform .12s;}
+  .menu-card:active{transform:scale(.985);} .menu-card.locked{opacity:.55;}
+  .menu-card .m-emoji{font-size:clamp(36px,7vw,52px);} .menu-card .m-title{font-size:clamp(17px,3vw,24px);font-weight:900;}
+  .menu-card .m-sub{font-size:clamp(12px,2.1vw,16px);color:#5a6072;font-weight:700;margin-top:3px;}
+  #page-map{align-items:center;}
+  .map-shell{width:100%;max-width:720px;margin:0 auto;}
+  .board{position:relative;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);gap:4px;aspect-ratio:1/1;width:100%;}
+  .tile{border-radius:11px;background:#fff;box-shadow:0 3px 7px rgba(0,0,0,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2px;position:relative;}
+  .tile .t-ic{font-size:clamp(13px,3.2vw,24px);line-height:1;} .tile .t-lbl{font-size:clamp(7px,1.3vw,10px);font-weight:800;color:#5a6072;margin-top:1px;}
+  .tile.forest{background:linear-gradient(150deg,#fff,#d8f5dd);} .tile.lake{background:linear-gradient(150deg,#fff,#d5eefb);} .tile.mount{background:linear-gradient(150deg,#fff,#e6dcf7);}
+  .tile.gym{background:linear-gradient(150deg,#fff,#ffd9e6);border:2px solid #ff5c93;} .tile.shop{background:linear-gradient(150deg,#fff,#fff0cf);border:2px solid #f0b000;} .tile.start{background:linear-gradient(150deg,#fff,#ffe9b0);border:2px solid #f0b000;}
+  .tile.cur{box-shadow:0 0 0 4px var(--accent),0 4px 10px rgba(0,0,0,.2);z-index:2;}
+  .center-panel{grid-column:2 / 8;grid-row:2 / 8;background:rgba(255,255,255,.78);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:10px;backdrop-filter:blur(3px);}
+  .center-panel .cp-title{font-size:clamp(12px,2.4vw,16px);font-weight:900;text-align:center;}
+  .center-panel .cp-msg{font-size:clamp(11px,2vw,14px);font-weight:700;color:#5a6072;text-align:center;min-height:2.6em;line-height:1.35;}
+  .dice{width:clamp(54px,13vw,80px);height:clamp(54px,13vw,80px);border-radius:16px;background:#fff;border:3px solid var(--main);display:flex;align-items:center;justify-content:center;font-size:clamp(32px,7.5vw,50px);box-shadow:0 6px 14px rgba(0,0,0,.18);}
+  .dice.rolling{animation:shake .5s ease;}
+  @keyframes shake{0%,100%{transform:rotate(0);}25%{transform:rotate(-16deg) scale(1.1);}75%{transform:rotate(16deg) scale(1.1);}}
+  .token{position:absolute;font-size:clamp(17px,4vw,26px);transition:left .2s ease,top .2s ease;transform:translate(-50%,-62%);pointer-events:none;z-index:3;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4));}
+  .token.rival{filter:drop-shadow(0 2px 3px rgba(200,0,60,.5));}
+  .modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(20,16,40,.55);backdrop-filter:blur(5px);}
+  .modal.show{display:flex;animation:fade .3s ease;}
+  .modal-box{background:#fff;border-radius:22px;padding:clamp(16px,3.5vw,30px);max-width:560px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.4);animation:zoom .4s cubic-bezier(.18,.9,.3,1.2);max-height:94dvh;overflow-y:auto;}
+  @keyframes zoom{from{transform:scale(.7);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .tag{display:inline-block;font-size:13px;font-weight:900;color:#fff;background:var(--main);padding:4px 13px;border-radius:999px;}
+  .modal-box h3{font-size:clamp(18px,3.3vw,25px);font-weight:900;margin:10px 0 6px;}
+  .q-text{font-size:clamp(18px,3.7vw,27px);font-weight:900;text-align:center;margin:10px 0 12px;min-height:1.3em;}
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .choice{padding:14px;border-radius:14px;border:3px solid #dfe3ee;background:#f7f9fd;font-size:clamp(16px,3vw,22px);font-weight:900;color:var(--ink);}
+  .choice:active{transform:scale(.96);} .choice.ok{background:var(--ok);border-color:var(--ok);color:#fff;} .choice.no{background:var(--no);border-color:var(--no);color:#fff;}
+  .modal-actions{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+  .mon-art{width:clamp(90px,26vw,140px);height:clamp(90px,26vw,140px);margin:2px auto;} .mon-art svg,.mon-art img{width:100%;height:100%;object-fit:contain;}
+  .mon-name{font-size:clamp(17px,3.2vw,23px);font-weight:900;} .mon-meta{font-size:13px;font-weight:800;color:#5a6072;margin-top:2px;}
+  .type-chip{display:inline-block;font-size:12px;font-weight:900;color:#fff;padding:2px 9px;border-radius:999px;}
+  .type-land{background:#2fae60;} .type-sea{background:#3aa8f0;} .type-air{background:#7c4dff;}
+  /* 對戰 */
+  .vs-wrap{display:flex;align-items:flex-end;justify-content:space-between;gap:6px;margin:6px 0;}
+  .fighter{flex:1;text-align:center;min-width:0;} .fighter .f-art{width:clamp(70px,20vw,110px);height:clamp(70px,20vw,110px);margin:0 auto;} .fighter .f-art svg{width:100%;height:100%;}
+  .fighter .f-nm{font-size:13px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .hpbar2{height:12px;border-radius:8px;background:#e6e9f2;overflow:hidden;margin:3px auto;max-width:130px;border:1px solid #cfd4e2;}
+  .hpbar2 i{display:block;height:100%;background:linear-gradient(90deg,#39c46b,#a7e86a);transition:width .3s;}
+  .hpbar2 i.low{background:linear-gradient(90deg,#e2433a,#ff8a3a);}
+  .team-dots{font-size:13px;letter-spacing:2px;} .vs-mid{font-size:22px;font-weight:900;color:var(--dark);align-self:center;}
+  .dmg-note{text-align:center;font-size:14px;font-weight:900;min-height:1.3em;color:var(--dark);}
+  .shop-item{display:flex;align-items:center;gap:12px;background:#f7f9fd;border-radius:14px;padding:11px 13px;margin:7px 0;}
+  .shop-item .s-ic{font-size:32px;} .shop-item .s-body{flex:1;text-align:left;} .shop-item .s-nm{font-weight:900;font-size:16px;} .shop-item .s-desc{font-size:12px;color:#5a6072;font-weight:700;}
+  .dex-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;}
+  .dex-item{background:#f4f6fc;border-radius:12px;padding:6px 3px;text-align:center;} .dex-item.have{background:linear-gradient(150deg,#fff,color-mix(in srgb,var(--accent) 14%,#fff));}
+  .dex-art{width:100%;aspect-ratio:1/1;} .dex-art svg,.dex-art img{width:100%;height:100%;object-fit:contain;} .dex-art.unknown{display:flex;align-items:center;justify-content:center;font-size:28px;color:#c3c9da;}
+  .dex-nm{font-size:10px;font-weight:800;margin-top:2px;} .dex-lv{font-size:10px;font-weight:900;color:var(--dark);}
+  .party-row{display:flex;align-items:center;gap:10px;background:#f7f9fd;border-radius:12px;padding:8px 10px;margin:6px 0;}
+  .party-row .p-art{width:44px;height:44px;} .party-row .p-art svg{width:100%;height:100%;} .party-row .p-body{flex:1;text-align:left;} .party-row .p-nm{font-weight:900;font-size:15px;}
+  .party-row .p-sub{font-size:11px;color:#5a6072;font-weight:700;}
+  #confetti{position:fixed;inset:0;pointer-events:none;z-index:75;display:none;}
+  .reset-hotspot{position:fixed;right:0;bottom:0;width:60px;height:60px;z-index:80;} .reset-hotspot::after{content:"🔒";position:absolute;right:12px;bottom:10px;font-size:14px;opacity:.15;}
+  @media (max-width:820px){.role-card{flex:1 1 100%;max-width:520px;min-height:200px;}}
+  @media (max-width:420px){.choices{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<section id="page-home" class="page active">
+  <h1 class="home-title">🎮 原創怪獸學習冒險</h1>
+  <p class="home-sub">✨ 答對題目 → 抓怪 · 養成 · 打道館，收集 990 圖鑑！✨</p>
+  <div class="card-wrap">
+    <button class="role-card card-g1" onclick="chooseRole('g1')"><span class="badge">小一 → 小二</span><span class="emoji">🧚‍♂️</span><span class="r-title">文字精靈訓練家</span><span class="r-desc">國字 · 注音 · 數學 · 英文</span></button>
+    <button class="role-card card-g3" onclick="chooseRole('g3')"><span class="badge">小三 → 小四</span><span class="emoji">🧙‍♂️</span><span class="r-title">數理魔導訓練家</span><span class="r-desc">詞語 · 乘除 · 分數 · 英文</span></button>
+  </div>
+</section>
+
+<section id="page-region" class="page">
+  <div class="topbar"><button class="back" onclick="go('page-home')">🏠</button><h2 id="region-role">訓練家</h2>
+    <span class="pill">⭐ Lv<span id="tr-lvl">1</span></span><span class="pill">🪙 <span id="coin-region">0</span></span></div>
+  <div class="menu-grid" id="region-list"></div>
+  <div class="modal-actions"><button class="btn ghost" onclick="openParty()">🎒 我的隊伍</button><button class="btn ghost" onclick="openDex()">📖 圖鑑</button></div>
+  <div class="menu-hint" style="text-align:center;font-size:13px;color:#6b7186;font-weight:700;margin-top:8px;">相剋：空剋陸、陸剋海、海剋空（剋到對方傷害 +30%）</div>
+</section>
+
+<section id="page-map" class="page">
+  <div class="topbar"><button class="back" onclick="go('page-region')">‹ 世界</button><h2 id="map-title">地圖</h2>
+    <span class="pill">⭐<span id="tr-lvl2">1</span></span><span class="pill">🪙 <span id="coin-map">0</span></span></div>
+  <div class="map-shell"><div class="board" id="board"></div></div>
+</section>
+
+<div class="modal" id="modal"><div class="modal-box" id="modal-box"></div></div>
+<div class="modal" id="dex-modal"><div class="modal-box">
+  <span class="tag">📖 怪獸圖鑑</span><h3 id="dex-title">已收集 0 / 990</h3>
+  <div class="dex-grid" id="dex-grid"></div>
+  <div class="modal-actions"><button class="btn" onclick="closeModal('dex-modal')">關閉</button></div>
+</div></div>
+<div class="modal" id="party-modal"><div class="modal-box">
+  <span class="tag">🎒 我的怪獸隊伍</span><h3 id="party-title">共 0 隻</h3>
+  <div id="party-list"></div>
+  <div class="modal-actions"><button class="btn" onclick="closeModal('party-modal')">關閉</button></div>
+</div></div>
+
+<canvas id="confetti"></canvas>
+<div class="reset-hotspot" id="reset-hotspot"></div>
+<div class="modal" id="reset-modal"><div class="modal-box" style="max-width:400px;text-align:center;">
+  <h3>🔒 家長重置</h3><p style="font-weight:700;color:#555c78;line-height:1.6;">清除這位訓練家的所有進度？</p>
+  <div class="modal-actions"><button class="btn" style="background:linear-gradient(120deg,#ff6b6b,#e23b3b);" onclick="doReset()">✅ 清除</button><button class="btn ghost" onclick="closeModal('reset-modal')">取消</button></div>
+</div></div>
+
+<script>
+"use strict";
+/* ============================================================
+   ★ 想換成自己的怪獸圖：在這裡填  物種編號: "圖片路徑或網址"
+     例： SPECIES_IMAGES[0] = "images/0.png";
+     沒填的用內建原創 SVG。圖檔請放此 HTML 旁的 images/ 資料夾。
+   ============================================================ */
+const SPECIES_IMAGES = {};
+
+/* ---------- 系別與相剋 ---------- */
+const TYPES = {
+  land:{ n:"陸", key:"land", terrain:"forest", tName:"森林", tIcon:"🌳", hue:120 },
+  sea :{ n:"海", key:"sea",  terrain:"lake",   tName:"湖泊", tIcon:"🏞️", hue:205 },
+  air :{ n:"空", key:"air",  terrain:"mount",  tName:"高山", tIcon:"⛰️", hue:280 }
+};
+const BEATS = { air:"land", land:"sea", sea:"air" };      // 攻方剋守方 → 傷害 x1.3
+const TERRAIN_TYPE = { forest:"land", lake:"sea", mount:"air" };
+
+/* ---------- 99 種原創怪獸（陸海空各33，動物命名） ---------- */
+const ANIMALS = {
+  land:["熊","虎","兔","狼","鹿","豬","牛","羊","獅","貓","鼠"],
+  sea :["鯉","鯊","龜","蝦","蟹","鯨","豚","章魚","水母","河豚","海馬"],
+  air :["鷹","蝶","鳥","蜂","鶴","燕","鴉","鸚","梟","隼","鳳"]
+};
+// 每隻怪獸用對應動物 emoji 當主體 → 一眼看得出是熊/魚/鳥（原創、免版權、檔案小）
+const EMOJI = {
+  land:["🐻","🐯","🐰","🐺","🦌","🐷","🐮","🐑","🦁","🐱","🐭"],
+  sea :["🐟","🦈","🐢","🦐","🦀","🐋","🐬","🐙","🪼","🐡","🐠"],
+  air :["🦅","🦋","🐦","🐝","🕊️","🐤","🐧","🦜","🦉","🦆","🦚"]
+};
+const PREFIX = {
+  land:["泡泡","硬殼","蓬蓬"], sea:["水花","珍珠","深海"], air:["旋風","閃電","彩羽"]
+};
+const SPECIES = [];
+["land","sea","air"].forEach(type=>{
+  for(let k=0;k<33;k++){
+    const animal=ANIMALS[type][k%11], prefix=PREFIX[type][Math.floor(k/11)];
+    const id=SPECIES.length;
+    const hue=TYPES[type].hue + ((k%11)-5)*7 + Math.floor(k/11)*4;
+    SPECIES.push({ id, type, name:prefix+animal, emoji:EMOJI[type][k%11], shape:id%8, hue,
+      baseHP:20+(id%5)*2, baseATK:8+(id%4), baseDEF:6+(id%3) });
+  }
+});
+const SP_BY_TYPE = { land:SPECIES.filter(s=>s.type==="land"), sea:SPECIES.filter(s=>s.type==="sea"), air:SPECIES.filter(s=>s.type==="air") };
+
+/* ---------- 數值：等級成長（每級 +15%，系別專屬 stat 額外 +15%=共30%） ---------- */
+function statAt(sp,lvl){
+  const t=sp.type, L=lvl-1;
+  const hf=Math.pow(t==="land"?1.30:1.15,L), af=Math.pow(t==="sea"?1.30:1.15,L), df=Math.pow(t==="air"?1.30:1.15,L);
+  return { hp:Math.round(sp.baseHP*hf), atk:Math.round(sp.baseATK*af), def:Math.round(sp.baseDEF*df) };
+}
+function dmgOf(attSp,attLvl,defSp,defLvl){
+  const a=statAt(attSp,attLvl).atk, d=statAt(defSp,defLvl).def;
+  const mult=(BEATS[attSp.type]===defSp.type)?1.3:1.0;
+  return { dmg:Math.max(1,Math.round(a*mult - d*0.4)), crit:mult>1 };
+}
+
+/* ---------- 怪獸圖：以「對應動物」為主體，放在系別配色的光球上，等級越高越華麗 ----------
+   （原創：標準 emoji 動物＋自繪光球/光環/皇冠；一眼看得出是熊/魚/鳥。想換自己的圖見 SPECIES_IMAGES） */
+function monsterSVG(sp,lvl){
+  lvl=lvl||1;
+  const gid="mg"+sp.id+"_"+lvl;
+  const c1=`hsl(${sp.hue},70%,60%)`, c2=`hsl(${sp.hue},82%,84%)`, dk=`hsl(${sp.hue},55%,32%)`;
+  const aura = lvl>=6 ? `<circle cx="60" cy="56" r="53" fill="none" stroke="${c2}" stroke-width="3.5" opacity=".65"/>` : "";
+  const glow = lvl>=8 ? `<g fill="${c2}" opacity=".9"><path d="M18 30 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3Z"/><path d="M100 24 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5Z"/></g>` : "";
+  const crown = lvl>=10 ? `<path d="M40 15 L49 1 L60 13 L71 1 L80 15 L76 24 L44 24 Z" fill="#ffd24a" stroke="#c79a00" stroke-width="2"/><circle cx="60" cy="7" r="3" fill="#ff5c7a"/>` : "";
+  // 等級小點（顯示目前等級 1~10）
+  let pips=""; for(let i=0;i<lvl;i++){ const x=60+(i-(lvl-1)/2)*8.5; pips+=`<circle cx="${x.toFixed(1)}" cy="106" r="2.6" fill="${dk}"/>`; }
+  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="${gid}" cx="42%" cy="32%" r="72%"><stop offset="0" stop-color="${c2}"/><stop offset=".62" stop-color="${c1}"/><stop offset="1" stop-color="${dk}"/></radialGradient></defs>
+    ${aura}${glow}
+    <ellipse cx="60" cy="98" rx="30" ry="6" fill="rgba(0,0,0,.15)"/>
+    <circle cx="60" cy="56" r="47" fill="url(#${gid})" stroke="${dk}" stroke-width="3"/>
+    <circle cx="60" cy="44" r="31" fill="#fff" opacity=".15"/>
+    <text x="60" y="85" font-size="84" text-anchor="middle">${sp.emoji}</text>
+    ${crown}${pips}</svg>`;
+}
+/* 自動圖片資料夾：把圖放在此 HTML 旁的 images/ 內、檔名=編號.png（例 images/0.png）。
+   偵測到 images/0.png 存在就整批啟用；缺圖的怪獸自動退回內建動物圖。編號見圖鑑 #號。 */
+let AUTO_IMG=false;
+(function(){ const t=new Image(); t.onload=()=>{ AUTO_IMG=true; }; t.src="images/0.png"; })();
+function monVisual(sp,lvl){
+  if(SPECIES_IMAGES[sp.id]) return `<img src="${SPECIES_IMAGES[sp.id]}" alt="${sp.name}" onerror="this.replaceWith(makeSvgEl(${sp.id},${lvl||1}))">`;
+  if(AUTO_IMG) return `<img src="images/${sp.id}.png" alt="${sp.name}" onerror="this.replaceWith(makeSvgEl(${sp.id},${lvl||1}))">`;
+  return monsterSVG(sp,lvl||1);
+}
+function makeSvgEl(id,lvl){ const d=document.createElement("div"); d.style.width="100%"; d.style.height="100%"; d.innerHTML=monsterSVG(SPECIES[id],lvl||1); return d.firstElementChild; }
+function typeChip(t){ return `<span class="type-chip type-${t}">${TYPES[t].tIcon}${TYPES[t].n}系</span>`; }
+
+/* ---------- 世界（region＝科目） ---------- */
+const REGIONS = [
+  { key:"math", subject:"math", name:"數學大陸", emoji:"🌋", rival:"🤖", desc:"用加減乘除的力量收服怪獸" },
+  { key:"chinese", subject:"chinese", name:"文字森林國", emoji:"🌳", rival:"👺", desc:"用國字與詞語的魔法收服怪獸" },
+  { key:"english", subject:"english", name:"字母海洋", emoji:"🌊", rival:"🦑", desc:"用英文單字的咒語收服怪獸" }
+];
+const GYM_LEADERS = [
+  {name:"岩石館主 磐岩",e:"🧔"},{name:"碧波館主 潮汐",e:"🧜‍♀️"},{name:"雲頂館主 疾風",e:"🧙"},
+  {name:"森林館主 綠影",e:"🧝"},{name:"烈日館主 焱陽",e:"👨‍🚀"},{name:"星辰館主 夜曦",e:"🧛"}
+];
+
+/* ---------- 題庫 ---------- */
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function Q(q,a,ds){return{q,a:String(a),choices:shuffle([String(a),...ds.map(String)])};}
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+function mathChoices(a){
+  const s=String(a); const set=new Set([s]);
+  if(/^\d+$/.test(s)){ const v=Number(s); let g=0; while(set.size<4&&g++<60){ const off=rnd(1,9)*(Math.random()<.5?1:-1); const c=v+off; if(c>=0) set.add(String(c)); } }
+  else if(s.includes("餘")){ const p=s.split("餘").map(Number); [`${p[0]+1}餘${p[1]}`,`${p[0]}餘${p[1]+1}`,`${Math.max(0,p[0]-1)}餘${p[1]}`].forEach(x=>set.add(x)); }
+  else if(s.includes("/")){ const p=s.split("/").map(Number); [`${p[0]+1}/${p[1]}`,`${Math.max(1,p[0]-1)}/${p[1]}`,`${p[0]+p[1]}/${p[1]}`].forEach(x=>set.add(x)); }
+  let k=0; while(set.size<4) set.add(s+" "+(++k));
+  return shuffle(Array.from(set).slice(0,4));
+}
+function genMath(role){
+  let q,a;
+  if(role==="g1"){ const t=Math.random();
+    if(t<.22){ const x=rnd(1,12),y=rnd(1,12); q=`${x} + ${y} = ?`; a=x+y; }
+    else if(t<.42){ const x=rnd(10,20),y=rnd(1,9); q=`${x} − ${y} = ?`; a=x-y; }
+    else if(t<.58){ const x=rnd(11,49),y=rnd(11,49); q=`${x} + ${y} = ?`; a=x+y; }
+    else if(t<.72){ const x=rnd(21,99),y=rnd(1,20); q=`${x} − ${y} = ?`; a=x-y; }
+    else if(t<.83){ const x=rnd(2,9); q=`${x} + ${x} = ?（雙倍）`; a=x+x; }
+    else if(t<.93){ const x=rnd(2,8),y=rnd(2,8),z=rnd(1,5); q=`${x} + ${y} + ${z} = ?`; a=x+y+z; }
+    else { const x=rnd(2,5); q=`${x} × 2 = ?`; a=x*2; }
+  } else { const t=Math.random();
+    if(t<.18){ const x=rnd(12,99),y=rnd(2,9); q=`${x} × ${y} = ?`; a=x*y; }
+    else if(t<.33){ const y=rnd(3,9),z=rnd(4,12); q=`${y*z} ÷ ${y} = ?`; a=z; }
+    else if(t<.48){ const x=rnd(100,899),y=rnd(100,899); q=`${x} + ${y} = ?`; a=x+y; }
+    else if(t<.6){ const x=rnd(400,900),y=rnd(100,399); q=`${x} − ${y} = ?`; a=x-y; }
+    else if(t<.72){ const y=rnd(3,9),z=rnd(4,9),r=rnd(1,y-1); q=`${y*z+r} ÷ ${y} = ?（商餘幾）`; a=`${z}餘${r}`; }
+    else if(t<.83){ const x=rnd(11,29),y=rnd(11,29); q=`${x} × ${y} = ?`; a=x*y; }
+    else if(t<.93){ const d=rnd(5,9),n1=rnd(1,d-2),n2=rnd(1,d-n1-1); q=`${n1}/${d} + ${n2}/${d} = ?`; a=`${n1+n2}/${d}`; }
+    else { const x=rnd(2,6),y=rnd(2,6),z=rnd(2,6); q=`(${x} + ${y}) × ${z} = ?`; a=(x+y)*z; }
+  }
+  return { q, a:String(a), choices:mathChoices(a) };
+}
+const BANK = {
+  g1:{
+    chinese:[
+      Q("「媽」的注音是？","ㄇㄚ",["ㄇㄛ","ㄇㄞ","ㄇㄟ"]),Q("「爸」的注音是？","ㄅㄚˋ",["ㄅㄛ","ㄅㄞ","ㄅㄟ"]),
+      Q("「魚」的注音是？","ㄩˊ",["ㄨˊ","ㄧˊ","ㄜˊ"]),Q("「貓」的注音是？","ㄇㄠ",["ㄇㄡ","ㄇㄤ","ㄇㄢ"]),
+      Q("「狗」的注音是？","ㄍㄡˇ",["ㄍㄠ","ㄎㄡ","ㄍㄨ"]),Q("「水」的注音是？","ㄕㄨㄟˇ",["ㄕㄟ","ㄙㄨㄟ","ㄕㄨㄞ"]),
+      Q("「火」的注音是？","ㄏㄨㄛˇ",["ㄏㄨ","ㄏㄛ","ㄍㄨㄛ"]),Q("「山」的注音是？","ㄕㄢ",["ㄙㄢ","ㄕㄤ","ㄔㄢ"]),
+      Q("「天」的注音是？","ㄊㄧㄢ",["ㄉㄧㄢ","ㄊㄢ","ㄊㄧㄤ"]),Q("「三」的注音是？","ㄙㄢ",["ㄕㄢ","ㄗㄢ","ㄘㄢ"]),
+      Q("ㄒㄧㄠˇ 是哪個字？","小",["大","少","水"]),Q("ㄉㄚˋ 是哪個字？","大",["太","天","犬"]),
+      Q("「花」的部首是？","艸(艹)",["木","口","日"]),Q("「打」的部首是？","手(扌)",["丁","口","人"]),
+      Q("「江」的部首是？","水(氵)",["工","土","木"]),Q("「明」的部首是？","日",["月","目","冏"]),
+      Q("「休」的部首是？","人(亻)",["木","日","口"]),Q("「星」的部首是？","日",["生","土","王"]),
+      Q("「樹」的部首是？","木",["對","寸","土"]),Q("「大」的相反是？","小",["多","高","長"]),
+      Q("「上」的相反是？","下",["左","右","中"]),Q("「開」的相反是？","關",["門","窗","鎖"]),
+      Q("「多」的相反是？","少",["大","高","快"]),Q("「前」的相反是？","後",["左","右","上"]),
+      Q("「火」可以組成？","火車",["水車","土車","風車"]),Q("「水」可以組成？","水果",["火果","土果","金果"]),
+      Q("「花」可以組成？","花朵",["花牙","花石","花鐵"]),Q("「日」的意思接近？","太陽",["月亮","星星","雲"]),
+      Q("「明」由哪兩字組成？","日月",["目月","日目","日日"]),Q("「林」有幾個木？","2",["1","3","4"]),
+      Q("「森」有幾個木？","3",["2","4","5"]),Q("「朋」由幾個月？","2",["1","3","4"]),
+      Q("一＿＿貓？","隻",["本","台","朵"]),Q("一＿＿書？","本",["隻","朵","條"]),
+      Q("一＿＿花？","朵",["隻","本","台"]),Q("一＿＿車？","台",["隻","本","朵"]),
+      Q("哪句最完整？","小鳥在唱歌。",["小鳥。","在唱歌","鳥鳥"]),Q("「我＿＿蘋果」填？","吃",["飛","跑","睡"]),
+      Q("句子結尾要加？","句號。",["逗號，","頓號、","冒號："]),Q("「兔」和哪個字最像？","免",["兒","克","見"])
+    ],
+    english:[
+      Q("大寫 B 的小寫是？","b",["d","p","q"]),Q("大寫 R 的小寫是？","r",["n","m","p"]),
+      Q("大寫 G 的小寫是？","g",["q","j","y"]),Q("小寫 m 的大寫是？","M",["N","W","H"]),
+      Q("apple 的開頭字母？","a",["e","o","i"]),Q("sun 的開頭字母？","s",["c","z","x"]),
+      Q("dog 的開頭字母？","d",["b","p","t"]),Q("red 的中文是？","紅色",["藍色","綠色","黑色"]),
+      Q("blue 的中文是？","藍色",["綠色","紅色","黃色"]),Q("green 的中文是？","綠色",["藍色","黃色","紫色"]),
+      Q("yellow 的中文是？","黃色",["紅色","黑色","白色"]),Q("紅色的英文是？","red",["blue","green","black"]),
+      Q("藍色的英文是？","blue",["red","green","pink"]),Q("綠色的英文是？","green",["gray","gold","blue"]),
+      Q("one 是幾？","1",["2","3","4"]),Q("3 的英文是？","three",["tree","free","third"]),
+      Q("five 是幾？","5",["4","6","9"]),Q("ten 是幾？","10",["2","12","1"]),
+      Q("7 的英文是？","seven",["sever","seventy","eleven"]),Q("8 的英文是？","eight",["eighty","eit","night"]),
+      Q("2 的英文是？","two",["too","to","tow"]),Q("cat 的中文是？","貓",["狗","魚","鳥"]),
+      Q("dog 的中文是？","狗",["貓","豬","牛"]),Q("fish 的中文是？","魚",["雞","馬","羊"]),
+      Q("bird 的中文是？","鳥",["魚","貓","狗"]),Q("apple 的中文是？","蘋果",["香蕉","橘子","蛋"]),
+      Q("蘋果的英文是？","apple",["banana","orange","egg"]),Q("香蕉的英文是？","banana",["apple","grape","melon"]),
+      Q("Hello 的意思是？","你好",["再見","謝謝","對不起"]),Q("Thank you 的意思是？","謝謝",["你好","再見","晚安"]),
+      Q("Bye 的意思是？","再見",["你好","謝謝","早安"]),Q("father 的中文是？","爸爸",["媽媽","哥哥","姊姊"]),
+      Q("mother 的中文是？","媽媽",["爸爸","弟弟","妹妹"]),Q("hand 的中文是？","手",["腳","頭","眼"]),
+      Q("head 的中文是？","頭",["手","腳","耳"]),Q("eye 的中文是？","眼睛",["鼻子","嘴巴","耳朵"]),
+      Q("「我喜歡狗」是？","I like dogs.",["I dog like.","Like I dogs.","Dogs I like."]),
+      Q("It is a ___.（貓）填？","cat",["cats","a cat is","the"]),Q("six 是幾？","6",["4","5","9"]),
+      Q("blue 是什麼顏色？","藍色",["綠色","紅色","黃色"])
+    ]
+  },
+  g3:{
+    chinese:[
+      Q("「銀行」的「行」讀？","ㄏㄤˊ",["ㄒㄧㄥˊ","ㄏㄥˊ","ㄒㄧㄤˊ"]),Q("「快樂」的「樂」讀？","ㄌㄜˋ",["ㄩㄝˋ","ㄧㄠˋ","ㄌㄠˊ"]),
+      Q("「音樂」的「樂」讀？","ㄩㄝˋ",["ㄌㄜˋ","ㄧㄠˋ","ㄌㄠˊ"]),Q("「長大」的「長」讀？","ㄓㄤˇ",["ㄔㄤˊ","ㄓㄤˋ","ㄔㄤˇ"]),
+      Q("「長短」的「長」讀？","ㄔㄤˊ",["ㄓㄤˇ","ㄓㄤˋ","ㄔㄤˇ"]),Q("「美麗」的近義詞？","漂亮",["醜陋","普通","巨大"]),
+      Q("「高興」的近義詞？","快樂",["難過","生氣","害怕"]),Q("「聰明」的近義詞？","伶俐",["愚笨","粗心","懶惰"]),
+      Q("「安全」的反義詞？","危險",["平安","舒服","乾淨"]),Q("「快速」的反義詞？","緩慢",["迅速","立刻","飛快"]),
+      Q("「勝利」的反義詞？","失敗",["成功","贏得","厲害"]),Q("「聰明」的反義詞？","愚笨",["機靈","伶俐","靈巧"]),
+      Q("「一舉＿得」填？","兩",["三","四","五"]),Q("「七上八＿」填？","下",["九","十","中"]),
+      Q("「三心二＿」填？","意",["心","念","想"]),Q("「九牛一＿」填？","毛",["角","尾","腳"]),
+      Q("「五顏六＿」填？","色",["彩","光","樣"]),Q("「千變萬＿」填？","化",["樣","種","象"]),
+      Q("「一心一＿」填？","意",["心","念","情"]),Q("「畫蛇添足」意思接近？","多此一舉",["非常勇敢","很有創意","動作很快"]),
+      Q("「井底之蛙」形容？","見識淺短",["很勇敢","很聰明","很努力"]),Q("「亡羊補牢」意思？","出事後及時補救",["不勞而獲","一次成功","白費力氣"]),
+      Q("「守株待兔」比喻？","死守經驗不知變通",["隨機應變","勤勞工作","團結合作"]),Q("「對牛彈琴」形容？","白費口舌",["很有音樂天分","很勤勞","很生氣"]),
+      Q("「熟能生巧」意思？","多練習就會熟練",["天生厲害","運氣好","不用學"]),Q("「舉一反三」形容？","善於類推",["很固執","很懶惰","記性差"]),
+      Q("「明察秋毫」形容？","觀察仔細",["眼睛不好","很粗心","看很遠"]),Q("「日」查字典的部首？","日",["目","白","田"]),
+      Q("「想」的部首是？","心",["木","目","日"]),Q("「跑」的部首是？","足(⻊)",["手","口","包"]),
+      Q("「飯」的部首是？","食(飠)",["反","人","口"]),Q("「炎」有幾個火？","2",["1","3","4"]),
+      Q("形近字：「日」與？","目",["月","白","田"]),Q("形近字：「土」與？","士",["王","工","干"]),
+      Q("「他跑得像風」用了？","譬喻",["擬人","誇飾","問句"]),Q("「花兒微笑」用了？","擬人",["譬喻","誇飾","數字"]),
+      Q("「白髮三千丈」用了？","誇飾",["擬人","譬喻","問句"]),Q("找段落大意要看？","整段的重點",["第一個字","最長的句子","標點符號"]),
+      Q("「因為下雨，＿＿沒出門」填？","所以",["但是","雖然","而且"]),Q("「雖然累，＿＿很開心」填？","但是",["所以","因為","於是"])
+    ],
+    english:[
+      Q("I ___ a student.","am",["is","are","be"]),Q("She ___ happy.","is",["am","are","do"]),
+      Q("They ___ friends.","are",["is","am","was"]),Q("He ___ tall.","is",["am","are","be"]),
+      Q("We ___ students.","are",["is","am","was"]),Q("問『這是什麼』？","What is this?",["Who are you?","How old?","Where is it?"]),
+      Q("問『在哪裡』用？","Where",["Who","When","What"]),Q("問『誰』用？","Who",["Where","Why","How"]),
+      Q("問『什麼時候』用？","When",["Where","Who","Which"]),Q("問『為什麼』用？","Why",["What","Who","Where"]),
+      Q("It is ___ apple. 填？","an",["a","the","two"]),Q("It is ___ dog. 填？","a",["an","the","two"]),
+      Q("run 加 ing 是？","running",["runing","runnning","runs"]),Q("swim 加 ing 是？","swimming",["swiming","swimm","swims"]),
+      Q("play 加 ing 是？","playing",["plaing","plaies","plays"]),Q("「我正在讀書」？","I am reading.",["I read book.","I reading.","I am read."]),
+      Q("「她正在跑步」？","She is running.",["She run.","She running.","She is run."]),Q("cat 由幾個音組成？","3",["2","4","1"]),
+      Q("dog 的第一個音是？","/d/",["/g/","/o/","/t/"]),Q("兩本書 是？","two books",["two book","two bookes","twos book"]),
+      Q("三隻貓 是？","three cats",["three cat","three cates","threes cat"]),Q("water 的中文是？","水",["火","風","土"]),
+      Q("happy 的反義是？","sad",["big","fast","new"]),Q("big 的反義是？","small",["tall","long","old"]),
+      Q("hot 的反義是？","cold",["warm","cool","dry"]),Q("day 的反義是？","night",["noon","week","year"]),
+      Q("book 的中文是？","書",["筆","桌","椅"]),Q("pen 的中文是？","筆",["書","尺","包"]),
+      Q("school 的中文是？","學校",["醫院","公園","商店"]),Q("teacher 的中文是？","老師",["學生","醫生","司機"]),
+      Q("friend 的中文是？","朋友",["敵人","老師","醫生"]),Q("Monday 是星期幾？","星期一",["星期二","星期日","星期三"]),
+      Q("Sunday 是星期幾？","星期日",["星期一","星期六","星期五"]),Q("red 的中文是？","紅色",["藍色","綠色","黑色"]),
+      Q("「你好嗎」？","How are you?",["What is this?","Who are you?","Where are you?"]),
+      Q("回答 How are you? 用？","I'm fine.",["Yes, I do.","It is a cat.","He is tall."]),
+      Q("mother 的中文是？","媽媽",["爸爸","阿姨","奶奶"]),Q("six 是幾？","6",["4","5","9"]),
+      Q("eight 是幾？","8",["6","5","9"]),Q("問『幾點』時常用？","o'clock",["apple","school","happy"])
+    ]
+  }
+};
+let curQ=null;
+/* ---------- 錯題重練：答錯的題目會在接下來 2~5 題內再次出現（同科目、標 🔁） ---------- */
+let qCount=0, retryQueue=[];
+function scheduleRetry(q,subject){
+  const clean=q.q.replace(/^🔁 /,"");
+  if(retryQueue.some(r=>r.q.q===clean)) return;          // 同一題不重複排隊
+  retryQueue.push({ q:{q:clean,a:q.a,choices:q.choices}, subject, dueAt:qCount+rnd(2,5) });
+  if(retryQueue.length>10) retryQueue.shift();           // 佇列上限，避免無限累積
+}
+function nextQ(subject){
+  qCount++;
+  const idx=retryQueue.findIndex(r=>r.subject===subject && qCount>=r.dueAt);
+  if(idx>=0){ const r=retryQueue.splice(idx,1)[0]; return { q:"🔁 "+r.q.q, a:r.q.a, choices:shuffle(r.q.choices) }; }
+  if(subject==="math") return genMath(role); const arr=BANK[role][subject]; return arr[rnd(0,arr.length-1)];
+}
+
+/* ---------- 捕獸珠 ---------- */
+const BALLS = { wood:{n:"木靈珠",e:"🟢",rate:.5,price:5}, silver:{n:"銀星珠",e:"⚪",rate:.72,price:12}, star:{n:"星輝珠",e:"🌟",rate:.95,price:30} };
+
+/* ============================================================ 狀態 / 存檔 */
+let role=null, region=0;
+const KEY="monster_rpg_adventure";
+function loadAll(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+function saveAll(d){ localStorage.setItem(KEY, JSON.stringify(d)); }
+function rdata(r){
+  const all=loadAll();
+  if(!all[r]) all[r]={ trainerExp:0, coins:15, balls:{wood:5,silver:0,star:0}, party:[], maxLvl:{}, unlocked:1, gymBeaten:[], starterPicked:false };
+  const d=all[r]; d.balls=d.balls||{wood:5,silver:0,star:0}; d.party=d.party||[]; d.maxLvl=d.maxLvl||{}; d.gymBeaten=d.gymBeaten||[];
+  if(typeof d.trainerExp!=="number") d.trainerExp=0; if(typeof d.coins!=="number") d.coins=15; if(typeof d.unlocked!=="number") d.unlocked=1;
+  return { all, d };
+}
+function trainerLvl(){ return Math.min(10, 1+Math.floor(rdata(role).d.trainerExp/8)); }
+function addTrainerExp(n){ const {all,d}=rdata(role); d.trainerExp+=n; saveAll(all); refreshHUD(); }
+function addCoins(n){ const {all,d}=rdata(role); d.coins=Math.max(0,d.coins+n); saveAll(all); refreshHUD(); return d.coins; }
+function getCoins(){ return rdata(role).d.coins; }
+function getBalls(){ return rdata(role).d.balls; }
+function addBall(t,n){ const {all,d}=rdata(role); d.balls[t]=(d.balls[t]||0)+n; saveAll(all); }
+function useBall(t){ const {all,d}=rdata(role); if((d.balls[t]||0)<=0) return false; d.balls[t]--; saveAll(all); return true; }
+function party(){ return rdata(role).d.party; }
+function addToParty(sid,lvl){ const {all,d}=rdata(role); d.party.push({sid,lvl,wins:0,uid:Date.now()+"_"+Math.floor(Math.random()*1e6)}); bumpMax(sid,lvl,d); saveAll(all); refreshHUD(); }
+function bumpMax(sid,lvl,d){ if(!d.maxLvl[sid]||d.maxLvl[sid]<lvl) d.maxLvl[sid]=lvl; }
+function saveParty(){ const {all,d}=rdata(role); d.party.forEach(m=>bumpMax(m.sid,m.lvl,d)); saveAll(all); }
+function dexCount(){ const m=rdata(role).d.maxLvl; return Object.values(m).reduce((a,b)=>a+b,0); }
+function unlockRegion(n){ const {all,d}=rdata(role); if(d.unlocked<n){ d.unlocked=n; saveAll(all); } }
+function markGym(k){ const {all,d}=rdata(role); if(!d.gymBeaten.includes(k)){ d.gymBeaten.push(k); saveAll(all); } }
+function gymBeaten(k){ return rdata(role).d.gymBeaten.includes(k); }
+function refreshHUD(){ const c=getCoins(),lv=trainerLvl();
+  [["coin-region",c],["coin-map",c],["tr-lvl",lv],["tr-lvl2",lv]].forEach(([id,v])=>{ const el=document.getElementById(id); if(el) el.textContent=v; }); }
+
+/* ---------- 音效 ---------- */
+const SFX=(()=>{ let ac=null,on=true;
+  function ctx(){ if(!ac){ try{ ac=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ on=false; } } return ac; }
+  function t(f,st,d,ty,v){ if(!on)return; const c=ctx(); if(!c)return; const o=c.createOscillator(),g=c.createGain(); o.type=ty||"sine"; o.frequency.value=f; o.connect(g); g.connect(c.destination); const s=c.currentTime+st; g.gain.setValueAtTime(.0001,s); g.gain.exponentialRampToValueAtTime(v||.12,s+.01); g.gain.exponentialRampToValueAtTime(.0001,s+d); o.start(s); o.stop(s+d+.02); }
+  return { resume(){ const c=ctx(); if(c&&c.state==="suspended") c.resume(); },
+    tap(){t(520,0,.07,"triangle",.07);}, dice(){[400,300,500,350].forEach((f,i)=>t(f,i*.05,.06,"square",.06));},
+    right(){t(660,0,.1,"triangle",.12);t(990,.07,.1,"triangle",.09);}, wrong(){t(170,0,.25,"sawtooth",.1);},
+    hit(){t(300,0,.08,"square",.09);}, crit(){t(520,0,.09,"square",.11);t(760,.05,.1,"square",.09);},
+    coin(){t(880,0,.08,"square",.08);t(1180,.06,.1,"square",.06);}, catchok(){[523,659,880,1046].forEach((f,i)=>t(f,i*.08,.25,"triangle",.11));},
+    levelup(){[523,659,784,1046,1318].forEach((f,i)=>t(f,i*.08,.3,"triangle",.12));}, win(){[523,659,784,1046,1318,1568].forEach((f,i)=>t(f,i*.1,.45,"triangle",.12));}, lose(){t(200,0,.4,"sawtooth",.1);} };
+})();
+
+/* ============================================================ 導覽 */
+function go(id){ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active")); document.getElementById(id).classList.add("active"); window.scrollTo(0,0); }
+function openModal(id){ document.getElementById(id).classList.add("show"); }
+function closeModal(id){ document.getElementById(id).classList.remove("show"); }
+const modalBox=()=>document.getElementById("modal-box");
+
+function chooseRole(r){ SFX.resume(); role=r;
+  document.body.classList.remove("theme-g1","theme-g3"); document.body.classList.add(r==="g1"?"theme-g1":"theme-g3");
+  document.getElementById("region-role").textContent=(r==="g1"?"🧚‍♂️ 文字精靈訓練家":"🧙‍♂️ 數理魔導訓練家");
+  renderRegions(); refreshHUD(); go("page-region");
+}
+function renderRegions(){
+  const {d}=rdata(role); const list=document.getElementById("region-list"); list.innerHTML="";
+  REGIONS.forEach((rg,i)=>{ const done=gymBeaten(rg.key);   // 世界全部開放，不上鎖
+    const card=document.createElement("div"); card.className="menu-card";
+    card.innerHTML=`<div class="m-emoji">${rg.emoji}</div><div class="m-body" style="flex:1;"><div class="m-title">${rg.name} ${done?"🏅":""}</div><div class="m-sub">${rg.desc}</div></div><div style="font-size:22px;">▶</div>`;
+    card.onclick=()=>{ SFX.tap(); openRegion(i); };
+    list.appendChild(card); });
+}
+
+/* ============================================================ 地圖 */
+const RING=[];
+(function(){ for(let c=1;c<=8;c++) RING.push([1,c]); for(let r=2;r<=8;r++) RING.push([r,8]); for(let c=7;c>=1;c--) RING.push([8,c]); for(let r=7;r>=2;r--) RING.push([r,1]); })();
+let tiles=[], pPos=0, rivalPos=15, busy=false;
+
+function openRegion(i){
+  region=i; const rg=REGIONS[i];
+  document.getElementById("map-title").textContent=`${rg.emoji} ${rg.name}`;
+  buildMap(); renderMap(); pPos=0; rivalPos=15; busy=false; refreshHUD(); go("page-map");   // busy 重置：避免道館打完回來骰子點不動
+  requestAnimationFrame(()=>{ placeToken("token",pPos,true); placeToken("token-rival",rivalPos,true); });
+  if(party().length===0 && !rdata(role).d.starterPicked) starterSelect();
+  else setMsg("擲骰子探索！🌳森林=陸系、🏞️湖泊=海系、⛰️高山=空系怪獸。");
+}
+const TERRAINS=["forest","lake","mount"];
+function buildMap(){
+  const n=RING.length; tiles=new Array(n);
+  let t=0;
+  for(let i=0;i<n;i++){ tiles[i]={type:TERRAINS[t%3]}; t++; }
+  tiles[0]={type:"start"}; tiles[7]={type:"shop"}; tiles[14]={type:"gym"}; tiles[21]={type:"shop"};
+}
+const TM={ start:{ic:"🏠",lbl:"出發"}, shop:{ic:"🛒",lbl:"商店"}, gym:{ic:"🏛️",lbl:"道館"},
+  forest:{ic:"🌳",lbl:"森林"}, lake:{ic:"🏞️",lbl:"湖泊"}, mount:{ic:"⛰️",lbl:"高山"} };
+function renderMap(){
+  const board=document.getElementById("board"); board.innerHTML="";
+  tiles.forEach((t,i)=>{ const [r,c]=RING[i]; const div=document.createElement("div");
+    div.className="tile "+t.type; div.style.gridRow=r; div.style.gridColumn=c; div.dataset.index=i;
+    div.innerHTML=`<div class="t-ic">${TM[t.type].ic}</div><div class="t-lbl">${TM[t.type].lbl}</div>`; board.appendChild(div); });
+  const center=document.createElement("div"); center.className="center-panel";
+  center.innerHTML=`<div class="cp-title">🎲 ${REGIONS[region].name}</div><div class="dice" id="dice">🎲</div><button class="btn" id="roll-btn" style="padding:10px 22px;">擲骰子</button><div class="cp-msg" id="cp-msg"></div>`;
+  board.appendChild(center); document.getElementById("roll-btn").onclick=rollDice;
+  const tk=document.createElement("div"); tk.className="token"; tk.id="token"; tk.textContent=(role==="g1"?"🧚":"🧙"); board.appendChild(tk);
+  const rv=document.createElement("div"); rv.className="token rival"; rv.id="token-rival"; rv.textContent=REGIONS[region].rival; board.appendChild(rv);
+}
+function setMsg(m){ const el=document.getElementById("cp-msg"); if(el) el.textContent=m; }
+function placeToken(tid,i,instant){
+  const board=document.getElementById("board"); const tile=board.querySelector(`.tile[data-index="${i}"]`); const tk=document.getElementById(tid);
+  if(!tile||!tk) return; if(instant) tk.style.transition="none"; else tk.style.transition="";
+  const dx=(tid==="token-rival")?10:-10;
+  tk.style.left=(tile.offsetLeft+tile.offsetWidth/2+dx)+"px"; tk.style.top=(tile.offsetTop+tile.offsetHeight/2)+"px";
+  if(instant) requestAnimationFrame(()=>{ tk.style.transition=""; });
+  if(tid==="token"){ board.querySelectorAll(".tile.cur").forEach(el=>el.classList.remove("cur")); tile.classList.add("cur"); }
+}
+function rollDice(){
+  if(busy) return; if(party().length===0){ setMsg("先選一隻初始夥伴！"); starterSelect(); return; }
+  busy=true; SFX.dice(); const dice=document.getElementById("dice"); dice.classList.add("rolling");
+  const val=1+Math.floor(Math.random()*6); const faces=["⚀","⚁","⚂","⚃","⚄","⚅"]; let f=0;
+  const sp=setInterval(()=>{ dice.textContent=faces[Math.floor(Math.random()*6)]; if(++f>7){ clearInterval(sp); dice.textContent=faces[val-1]; dice.classList.remove("rolling"); movePlayer(val); } },70);
+}
+function movePlayer(steps){
+  setMsg(`前進 ${steps} 格！`); let left=steps, lap=false;
+  const iv=setInterval(()=>{ pPos=(pPos+1)%RING.length; placeToken("token",pPos); SFX.tap();
+    if(pPos===0){ addCoins(3); addBall("wood",1); lap=true; SFX.coin(); }
+    if(--left<=0){ clearInterval(iv); const after=()=>{ if(pPos===rivalPos) startBattle("rival"); else resolveTile(pPos); };
+      if(lap){ setMsg("🎉 繞完一圈！獲得 🟢木靈珠 ×1（＋3🪙）"); setTimeout(after,1100); } else setTimeout(after,220); } },230);
+}
+function resolveTile(i){
+  const t=tiles[i].type;
+  if(t==="start"){ setMsg("🏠 出發點，補給站。"); endTurn(); }
+  else if(t==="shop"){ openShop(); }
+  else if(t==="gym"){ openGymIntro(); }
+  else encounter(TERRAIN_TYPE[t]);   // forest/lake/mount → land/sea/air
+}
+function endTurn(){
+  const val=1+Math.floor(Math.random()*6); let left=val;
+  const iv=setInterval(()=>{ rivalPos=(rivalPos+1)%RING.length; placeToken("token-rival",rivalPos);
+    if(--left<=0){ clearInterval(iv); if(rivalPos===pPos){ setMsg(`${REGIONS[region].rival} 對手追上你了！`); setTimeout(()=>startBattle("rival"),500); } else busy=false; } },190);
+}
+
+/* ============================================================ 初始夥伴 */
+function starterSelect(){
+  const opts=["land","sea","air"].map(tp=>{ const pool=SP_BY_TYPE[tp]; return pool[rnd(0,pool.length-1)]; });
+  const box=modalBox();
+  box.innerHTML=`<span class="tag">🌟 選擇你的初始夥伴</span><h3 style="text-align:center;">先選一隻，答對一題就收服牠！</h3>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">${opts.map((sp,idx)=>`
+      <button class="menu-card" style="flex-direction:column;width:31%;min-width:96px;text-align:center;padding:10px 6px;" data-idx="${idx}">
+        <div class="mon-art" style="width:76px;height:76px;">${monVisual(sp,1)}</div>
+        <div class="mon-name" style="font-size:14px;">${sp.name}</div>${typeChip(sp.type)}</button>`).join("")}</div>`;
+  box.querySelectorAll("button[data-idx]").forEach(b=>b.onclick=()=>{ SFX.tap(); starterConfirm(opts[+b.dataset.idx]); });
+  openModal("modal");
+}
+function starterConfirm(sp){
+  const q=nextQ(REGIONS[region].subject); const box=modalBox();
+  box.innerHTML=`<span class="tag">✨ 收服 ${sp.name}</span><div class="mon-art">${monVisual(sp,1)}</div>
+    <div style="text-align:center;" class="mon-name">${sp.name} ${typeChip(sp.type)}</div>
+    <p style="text-align:center;font-weight:800;color:#5a6072;">答對就把牠收進隊伍！</p>
+    <div class="q-text">${q.q}</div><div class="choices" id="st-c"></div>`;
+  renderChoices("st-c",q,(ok)=>{ setTimeout(()=>{
+    if(ok){ const {all,d}=rdata(role); d.starterPicked=true; saveAll(all); addToParty(sp.id,1); addTrainerExp(2);
+      SFX.catchok(); startConfetti(1200);
+      box.innerHTML=`<div style="text-align:center;"><span class="tag">🎉 成為夥伴！</span><div class="mon-art">${monVisual(sp,1)}</div><div class="mon-name">${sp.name} 加入隊伍！</div><div class="mon-meta">Lv1 · ${TYPES[sp.type].n}系</div><div class="modal-actions"><button class="btn big" id="st-ok">出發冒險！</button></div></div>`;
+      document.getElementById("st-ok").onclick=()=>{ closeModal("modal"); setMsg("擲骰子開始冒險！"); };
+    } else starterSelect();
+  },700); });
+}
+
+/* ============================================================ 野生遭遇（抓怪） */
+let curWild=null;
+function encounter(type){
+  const pool=SP_BY_TYPE[type]; const sp=pool[rnd(0,pool.length-1)];
+  const cap=trainerLvl(); const lvl=Math.max(1, Math.min(10, rnd(cap-1,cap+1)));
+  curWild={ sp, lvl };
+  const q=nextQ(REGIONS[region].subject); const box=modalBox();
+  box.innerHTML=`<span class="tag">${TYPES[type].tIcon} 野生怪獸出現！</span>
+    <div class="mon-art">${monVisual(sp,lvl)}</div>
+    <div style="text-align:center;" class="mon-name">${sp.name} <span class="mon-meta">Lv${lvl}</span></div>
+    <div style="text-align:center;">${typeChip(type)}</div>
+    <p style="text-align:center;font-weight:800;color:#5a6072;">答對就能丟球收服牠！</p>
+    <div class="q-text">${q.q}</div><div class="choices" id="enc-c"></div>`;
+  renderChoices("enc-c",q,(ok)=>{ addTrainerExp(2); setTimeout(()=>{   // 無論有沒有收服，經驗都 +2
+    if(ok){ addCoins(2); SFX.coin();
+      if(curWild.lvl>trainerLvl()){ // 等級太高抓不到
+        box.innerHTML=`<div style="text-align:center;"><span class="tag">⚠️ 等級太高</span><div class="mon-art" style="filter:grayscale(.4)">${monVisual(sp,lvl)}</div><div class="mon-name">${sp.name} Lv${lvl}</div><div class="mon-meta">你目前訓練師 Lv${trainerLvl()}，還收服不了牠。<br>多對戰提升訓練師等級再來！</div><div class="modal-actions"><button class="btn" id="e-ok">知道了</button></div></div>`;
+        document.getElementById("e-ok").onclick=()=>{ closeModal("modal"); setMsg("提升訓練師等級後就抓得到高級怪獸！"); endTurn(); };
+      } else chooseBall();
+    } else { closeModal("modal"); setMsg(`😿 答錯了，${sp.name} 逃走了…（訓練師經驗 +2）`); endTurn(); }
+  },800); });
+  openModal("modal");
+}
+function chooseBall(){
+  const balls=getBalls(); const {sp,lvl}=curWild; const box=modalBox();
+  box.innerHTML=`<span class="tag">✅ 答對！丟出捕獸珠</span><div class="mon-art">${monVisual(sp,lvl)}</div>
+    <div style="text-align:center;" class="mon-name">${sp.name} Lv${lvl}</div><div id="ball-list"></div>
+    <div class="modal-actions"><button class="btn ghost" id="ball-skip">先不抓</button></div>`;
+  const list=box.querySelector("#ball-list");
+  Object.keys(BALLS).forEach(tp=>{ const b=BALLS[tp], cnt=balls[tp]||0; const row=document.createElement("button");
+    row.className="shop-item"; row.style.width="100%"; row.style.border="none"; row.disabled=cnt<=0;
+    row.innerHTML=`<div class="s-ic">${b.e}</div><div class="s-body"><div class="s-nm">${b.n}（成功率 ${Math.round(b.rate*100)}%）</div><div class="s-desc">擁有 ${cnt} 顆</div></div><div style="font-weight:900;">${cnt>0?"丟！":"沒了"}</div>`;
+    if(cnt>0) row.onclick=()=>throwBall(tp); list.appendChild(row); });
+  box.querySelector("#ball-skip").onclick=()=>{ closeModal("modal"); setMsg("先不抓，繼續探索。"); endTurn(); };
+}
+function throwBall(tp){
+  if(!useBall(tp)) return; const b=BALLS[tp]; const {sp,lvl}=curWild;
+  const penalty={1:1,2:.92,3:.85,4:.78,5:.72,6:.66,7:.6,8:.55,9:.5,10:.45}[lvl]||.5;
+  const success=Math.random()<b.rate*penalty; const box=modalBox();
+  if(success){ addToParty(sp.id,lvl); addCoins(3); addTrainerExp(2); SFX.catchok(); startConfetti(1200);
+    box.innerHTML=`<div style="text-align:center;"><span class="tag">🎉 收服成功！</span><div class="mon-art">${monVisual(sp,lvl)}</div><div class="mon-name">${sp.name} Lv${lvl} 加入隊伍！</div><div class="mon-meta">🪙 +3 · 圖鑑進度 ${dexCount()}/990</div><div class="modal-actions"><button class="btn big" id="c-ok">太好了！</button></div></div>`;
+    box.querySelector("#c-ok").onclick=()=>{ closeModal("modal"); setMsg(`收服了 ${sp.name}！繼續探索～`); endTurn(); };
+  } else { SFX.wrong();
+    box.innerHTML=`<div style="text-align:center;"><span class="tag">💨 差一點！</span><div class="mon-art" style="filter:grayscale(.4) opacity(.75)">${monVisual(sp,lvl)}</div><div class="mon-name">${sp.name} 掙脫了…</div><div class="mon-meta">用更高級的珠子成功率更高！</div><div class="modal-actions">${anyBall()?`<button class="btn" id="c-retry">再丟一顆</button>`:""}<button class="btn ghost" id="c-give">放牠走</button></div></div>`;
+    const rt=box.querySelector("#c-retry"); if(rt) rt.onclick=()=>chooseBall();
+    box.querySelector("#c-give").onclick=()=>{ closeModal("modal"); setMsg(`${sp.name} 逃走了…`); endTurn(); };
+  }
+}
+function anyBall(){ const b=getBalls(); return (b.wood+b.silver+b.star)>0; }
+
+/* ============================================================ 對戰（3v3） */
+let bt=null;
+function topParty(n){ return party().slice().sort((a,b)=>b.lvl-a.lvl).slice(0,n); }
+function makeFighter(inst){ const sp=SPECIES[inst.sid]; const s=statAt(sp,inst.lvl); return { sid:inst.sid, lvl:inst.lvl, sp, hp:s.hp, maxhp:s.hp, ref:inst }; }
+function startBattle(kind){
+  closeModal("modal");
+  let oppTeam, leader=null;
+  if(kind==="gym"){
+    const ls=party().map(m=>m.lvl).sort((a,b)=>b-a); const M=ls.length>=2?ls[1]:(ls[0]||1);
+    const tp=["land","sea","air"][rnd(0,2)]; const pool=SP_BY_TYPE[tp];
+    leader=GYM_LEADERS[rnd(0,GYM_LEADERS.length-1)];
+    oppTeam=[M,Math.max(1,M-1),Math.max(1,M-1)].map(l=>makeFighter({sid:pool[rnd(0,pool.length-1)].id,lvl:l}));
+  } else {
+    const oc=rnd(1,3); const avg=Math.max(1,Math.round(party().reduce((a,m)=>a+m.lvl,0)/Math.max(1,party().length)));
+    oppTeam=[]; for(let i=0;i<oc;i++){ const tp=["land","sea","air"][rnd(0,2)]; const pool=SP_BY_TYPE[tp]; oppTeam.push(makeFighter({sid:pool[rnd(0,pool.length-1)].id,lvl:Math.max(1,Math.min(10,avg+rnd(-1,1)))})); }
+  }
+  const pCount=Math.min(oppTeam.length, party().length); // 你不能比對手多
+  const pTeam=topParty(pCount).map(makeFighter);
+  bt={ kind, leader, pTeam, oTeam:oppTeam, pIdx:0, oIdx:0, oppMax:Math.max(...oppTeam.map(f=>f.lvl)) };
+  renderBattle(kind==="gym"?`🏛️ ${leader.name} 的道館挑戰！`:`${REGIONS[region].rival} 對手來襲！`, "");
+  openModal("modal");
+}
+function alive(team){ return team.filter(f=>f.hp>0).length; }
+function dots(team,idx){ return team.map((f,i)=>f.hp>0?(i===idx?"🔵":"⚪"):"⚫").join(""); }
+function hpPct(f){ return Math.max(0,Math.round(f.hp/f.maxhp*100)); }
+function renderBattle(title,note){
+  const p=bt.pTeam[bt.pIdx], o=bt.oTeam[bt.oIdx];
+  const q=nextQ(REGIONS[region].subject); const box=modalBox();
+  box.innerHTML=`<span class="tag">${title}</span>
+    <div class="vs-wrap">
+      <div class="fighter"><div class="f-art">${monVisual(o.sp,o.lvl)}</div><div class="f-nm">${o.sp.name} Lv${o.lvl}</div>
+        <div class="hpbar2"><i class="${hpPct(o)<35?'low':''}" style="width:${hpPct(o)}%"></i></div>
+        <div class="team-dots">對手 ${dots(bt.oTeam,bt.oIdx)}</div></div>
+      <div class="vs-mid">VS</div>
+      <div class="fighter"><div class="f-art">${monVisual(p.sp,p.lvl)}</div><div class="f-nm">${p.sp.name} Lv${p.lvl}</div>
+        <div class="hpbar2"><i class="${hpPct(p)<35?'low':''}" style="width:${hpPct(p)}%"></i></div>
+        <div class="team-dots">你的 ${dots(bt.pTeam,bt.pIdx)}</div></div>
+    </div>
+    <div class="dmg-note" id="dmg-note">${note||`${BEATS[p.sp.type]===o.sp.type?"⚡ 你剋制對方！":""}`}</div>
+    <div class="q-text">${q.q}</div><div class="choices" id="bt-c"></div>`;
+  renderChoices("bt-c",q,(ok)=>{
+    let note2="";
+    if(ok){ const r=dmgOf(p.sp,p.lvl,o.sp,o.lvl); o.hp-=r.dmg; r.crit?SFX.crit():SFX.hit(); note2=`⚔️ ${p.sp.name} 攻擊！造成 ${r.dmg} 傷害${r.crit?"（剋制 +30%！）":""}`; }
+    else { const r=dmgOf(o.sp,o.lvl,p.sp,p.lvl); p.hp-=r.dmg; SFX.wrong(); note2=`😵 答錯！${o.sp.name} 反擊，你受 ${r.dmg} 傷害${r.crit?"（牠剋制你）":""}`; }
+    setTimeout(()=>{
+      if(o.hp<=0){ if(bt.oIdx<bt.oTeam.length-1){ bt.oIdx++; note2+=` 對手換上 ${bt.oTeam[bt.oIdx].sp.name}！`; } }
+      if(p.hp<=0){ if(bt.pIdx<bt.pTeam.length-1){ bt.pIdx++; note2+=` 你換上 ${bt.pTeam[bt.pIdx].sp.name}！`; } }
+      if(alive(bt.oTeam)===0) battleEnd(true);
+      else if(alive(bt.pTeam)===0) battleEnd(false);
+      else renderBattle(title,note2);
+    }, ok?650:850);
+  });
+}
+function battleEnd(win){
+  const box=modalBox();
+  if(win){
+    // 升級：參戰怪獸戰勝同級(對手最高級≥自己)→+1勝，滿5升級
+    const leveled=[]; const {all,d}=rdata(role);
+    bt.pTeam.forEach(f=>{ const inst=d.party.find(m=>m.uid===f.ref.uid); if(!inst) return;
+      if(bt.oppMax>=inst.lvl && inst.lvl<10){ inst.wins=(inst.wins||0)+1; if(inst.wins>=5){ inst.wins=0; inst.lvl++; bumpMax(inst.sid,inst.lvl,d); leveled.push(SPECIES[inst.sid].name+" → Lv"+inst.lvl); } } });
+    saveAll(all);
+    addTrainerExp(3); const reward=bt.kind==="gym"?25:10; addCoins(reward);
+    if(leveled.length) SFX.levelup(); else SFX.win(); startConfetti(1800);
+    if(bt.kind==="gym"){ markGym(REGIONS[region].key);
+      box.innerHTML=`<div style="text-align:center;"><span class="tag">🏆 道館攻略成功！</span><div style="font-size:52px;">${bt.leader.e}🏛️</div>
+        <div class="mon-name">打敗 ${bt.leader.name}！</div>
+        <div class="mon-meta">🪙 +25 · 訓練師經驗 +3 · 取得 ${REGIONS[region].name} 徽章 🏅</div>
+        ${leveled.length?`<div class="mon-meta" style="color:var(--dark);">⬆️ ${leveled.join("、")}</div>`:""}
+        <div class="modal-actions"><button class="btn big" id="g-ok">太強了！</button></div></div>`;
+      box.querySelector("#g-ok").onclick=()=>{ closeModal("modal"); stopConfetti(); renderRegions(); go("page-region"); };
+    } else {
+      box.innerHTML=`<div style="text-align:center;"><span class="tag">⚔️ 對戰勝利！</span><div style="font-size:48px;">🎉</div>
+        <div class="mon-name">你贏了對手！</div><div class="mon-meta">🪙 +10 · 訓練師經驗 +3</div>
+        ${leveled.length?`<div class="mon-meta" style="color:var(--dark);">⬆️ ${leveled.join("、")}</div>`:""}
+        <div class="modal-actions"><button class="btn big" id="b-ok">繼續冒險</button></div></div>`;
+      box.querySelector("#b-ok").onclick=()=>{ closeModal("modal"); rivalPos=(rivalPos+5)%RING.length; placeToken("token-rival",rivalPos,true); setMsg("打贏對手！繼續探索～"); busy=false; };
+    }
+  } else {
+    addTrainerExp(2); SFX.lose();
+    const isGym=bt.kind==="gym";
+    box.innerHTML=`<div style="text-align:center;"><span class="tag">😵 這次輸了…</span><div style="font-size:48px;">💫</div>
+      <div class="mon-name">你的怪獸全部倒下了</div><div class="mon-meta">訓練師經驗 +1。抓更多怪、升級後再挑戰！</div>
+      <div class="modal-actions">${isGym?`<button class="btn" id="l-retry">再挑戰道館</button>`:""}<button class="btn ghost" id="l-ok">${isGym?"先離開":"繼續"}</button></div></div>`;
+    const rt=box.querySelector("#l-retry"); if(rt) rt.onclick=()=>startBattle("gym");
+    box.querySelector("#l-ok").onclick=()=>{ closeModal("modal"); if(!isGym){ rivalPos=(rivalPos+5)%RING.length; placeToken("token-rival",rivalPos,true); } setMsg("重整旗鼓，再出發！"); busy=false; };
+  }
+}
+
+/* ============================================================ 道館入口 */
+function openGymIntro(){
+  const rg=REGIONS[region], beaten=gymBeaten(rg.key);
+  const ls=party().map(m=>m.lvl).sort((a,b)=>b-a); const M=ls.length>=2?ls[1]:(ls[0]||1);
+  const box=modalBox();
+  box.innerHTML=`<span class="tag">🏛️ ${rg.name}道館</span><h3 style="text-align:center;">${beaten?"你已攻略過 🏅":"挑戰道館，贏得徽章與經驗！"}</h3>
+    <p style="text-align:center;font-weight:800;color:#5a6072;line-height:1.6;">館主每次不同，會派出 <b>同一系列 3 隻</b> 怪獸，最高等級以你「第二高怪獸」為準（目前約 Lv${M}）。<br>你要派出 ${Math.min(3,party().length)} 隻（不多於對手）迎戰！</p>
+    <div class="modal-actions"><button class="btn big" id="gym-go">${beaten?"再挑戰":"開始挑戰！"}</button><button class="btn ghost" id="gym-skip">還沒準備好</button></div>`;
+  box.querySelector("#gym-go").onclick=()=>{ if(party().length===0){ setMsg("先抓幾隻怪獸再來！"); return; } startBattle("gym"); };
+  box.querySelector("#gym-skip").onclick=()=>{ closeModal("modal"); setMsg("道館隨時歡迎你回來！"); endTurn(); };
+  openModal("modal");
+}
+
+/* ============================================================ 商店 */
+function openShop(){
+  const box=modalBox();
+  function draw(){ const balls=getBalls();
+    box.innerHTML=`<span class="tag">🛒 捕獸珠商店</span><h3 style="text-align:center;">🪙 金幣：${getCoins()}</h3><div id="shop-list"></div><div class="modal-actions"><button class="btn" id="shop-close">離開商店</button></div>`;
+    const list=box.querySelector("#shop-list");
+    Object.keys(BALLS).forEach(tp=>{ const b=BALLS[tp], cnt=balls[tp]||0, can=getCoins()>=b.price; const row=document.createElement("div"); row.className="shop-item";
+      row.innerHTML=`<div class="s-ic">${b.e}</div><div class="s-body"><div class="s-nm">${b.n}</div><div class="s-desc">成功率 ${Math.round(b.rate*100)}% · 擁有 ${cnt}</div></div><button class="btn" style="padding:8px 15px;font-size:14px;" ${can?"":"disabled"}>🪙${b.price}</button>`;
+      row.querySelector("button").onclick=()=>{ if(getCoins()>=b.price){ addCoins(-b.price); addBall(tp,1); SFX.coin(); draw(); } }; list.appendChild(row); });
+    box.querySelector("#shop-close").onclick=()=>{ closeModal("modal"); setMsg("補滿珠子，繼續抓怪！"); endTurn(); };
+  }
+  draw(); openModal("modal");
+}
+
+/* ---------- 選項渲染 ---------- */
+function renderChoices(cid,q,cb){
+  curQ=q; const box=document.getElementById(cid); box.innerHTML="";
+  // 防呆：選項先以「半透明停用」出現 0.25 秒再開放，擋掉上一畫面穿透的點擊（iPad 幽靈點擊），
+  // 且使用者看得到按鈕亮起，不會有「點了沒反應」的錯覺
+  q.choices.forEach(ch=>{ const b=document.createElement("button"); b.className="choice"; b.textContent=ch;
+    b.disabled=true; b.style.opacity=".45";
+    b.onclick=()=>{ const ok=(ch===q.a); box.querySelectorAll(".choice").forEach(x=>x.disabled=true);
+      if(ok){ b.classList.add("ok"); SFX.right(); } else { b.classList.add("no"); box.querySelectorAll(".choice").forEach(x=>{ if(x.textContent===q.a) x.classList.add("ok"); }); scheduleRetry(q,REGIONS[region].subject); }
+      cb(ok); };
+    box.appendChild(b); });
+  setTimeout(()=>{ box.querySelectorAll(".choice").forEach(x=>{ x.disabled=false; x.style.opacity="1"; }); },250);
+}
+
+/* ============================================================ 隊伍 / 圖鑑 */
+function openParty(){
+  const p=party(); document.getElementById("party-title").textContent=`共 ${p.length} 隻`;
+  const list=document.getElementById("party-list");
+  if(!p.length){ list.innerHTML=`<p style="text-align:center;color:#6b7186;font-weight:700;">還沒有怪獸～進世界抓幾隻吧！</p>`; }
+  else{ list.innerHTML=p.slice().sort((a,b)=>b.lvl-a.lvl).map(m=>{ const sp=SPECIES[m.sid], s=statAt(sp,m.lvl);
+    return `<div class="party-row"><div class="p-art">${monVisual(sp,m.lvl)}</div><div class="p-body"><div class="p-nm">${sp.name} ${typeChip(sp.type)}</div><div class="p-sub">Lv${m.lvl} · ❤️${s.hp} ⚔️${s.atk} 🛡️${s.def} · 升級進度 ${m.wins||0}/5</div></div></div>`; }).join(""); }
+  openModal("party-modal");
+}
+function openDex(){
+  document.getElementById("dex-title").textContent=`已收集 ${dexCount()} / 990（99 種 × 10 級）`;
+  const mx=rdata(role).d.maxLvl; const grid=document.getElementById("dex-grid"); grid.innerHTML="";
+  SPECIES.forEach(sp=>{ const lv=mx[sp.id]||0; const have=lv>0; const it=document.createElement("div"); it.className="dex-item"+(have?" have":"");
+    it.innerHTML=`<div class="dex-art ${have?"":"unknown"}">${have?monVisual(sp,lv):"❔"}</div><div class="dex-nm">#${sp.id} ${have?sp.name:"？？？"}</div><div class="dex-lv">${have?("Lv"+lv+"/10 "+TYPES[sp.type].n):"未捕獲"}</div>`;
+    grid.appendChild(it); });
+  openModal("dex-modal");
+}
+
+/* ============================================================ 彩帶 */
+const canvas=document.getElementById("confetti"), cctx=canvas.getContext("2d");
+let pieces=[], ctimer=null;
+const CC=["#f6b40e","#2fae60","#3a6df0","#7c4dff","#ff6b6b","#ff9f43","#00d2d3"], CE=["⭐","✨","🎉","🏆","💎"];
+function rs(){ canvas.width=innerWidth; canvas.height=innerHeight; } addEventListener("resize",rs);
+function mkPiece(mode){ const r=Math.random(); const shape=r<.55?"rect":(r<.8?"circle":"emoji");
+  const p={shape,color:CC[Math.floor(Math.random()*CC.length)],emoji:CE[Math.floor(Math.random()*CE.length)],size:9+Math.random()*11,angle:Math.random()*6.28,spin:(Math.random()-.5)*.3,sway:.5+Math.random()*1.5};
+  if(mode==="burst"){ const a=Math.random()*6.28,sp=6+Math.random()*10; p.x=canvas.width/2; p.y=canvas.height*.4; p.vx=Math.cos(a)*sp; p.vy=Math.sin(a)*sp-4; p.grav=.18; p.burst=true; }
+  else{ p.x=Math.random()*canvas.width; p.y=Math.random()*-canvas.height; p.vy=2+Math.random()*4; p.grav=0; } return p; }
+function startConfetti(ms){ rs(); canvas.style.display="block"; pieces=[];
+  for(let i=0;i<110;i++) pieces.push(mkPiece("rain")); for(let i=0;i<80;i++) pieces.push(mkPiece("burst"));
+  if(ctimer) cancelAnimationFrame(ctimer);
+  (function loop(){ cctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p=>{ if(p.burst){ p.vy+=p.grav; p.vx*=.99; p.x+=p.vx; p.y+=p.vy; } else { p.y+=p.vy; p.x+=Math.sin(p.y*.02)*p.sway; if(p.y>canvas.height+20){ p.y=-20; p.x=Math.random()*canvas.width; } } p.angle+=p.spin;
+      cctx.save(); cctx.translate(p.x,p.y); cctx.rotate(p.angle);
+      if(p.shape==="rect"){ cctx.fillStyle=p.color; cctx.fillRect(-p.size/2,-p.size*.7,p.size,p.size*1.4); }
+      else if(p.shape==="circle"){ cctx.fillStyle=p.color; cctx.beginPath(); cctx.arc(0,0,p.size*.55,0,6.28); cctx.fill(); }
+      else{ cctx.font=(p.size*1.8)+"px serif"; cctx.textAlign="center"; cctx.textBaseline="middle"; cctx.fillText(p.emoji,0,0); }
+      cctx.restore(); });
+    ctimer=requestAnimationFrame(loop); })();
+  if(ms) setTimeout(stopConfetti,ms);
+}
+function stopConfetti(){ if(ctimer) cancelAnimationFrame(ctimer); ctimer=null; cctx.clearRect(0,0,canvas.width,canvas.height); canvas.style.display="none"; }
+
+/* ---------- 家長重置 ---------- */
+const hot=document.getElementById("reset-hotspot");
+hot.addEventListener("dblclick",()=>openModal("reset-modal"));
+let lastTap=0; hot.addEventListener("touchend",e=>{ e.preventDefault(); const now=Date.now(); if(now-lastTap<350) openModal("reset-modal"); lastTap=now; });
+function doReset(){ const all=loadAll(); delete all[role]; saveAll(all); closeModal("reset-modal"); rdata(role); refreshHUD(); renderRegions(); alert("已清除本訓練家的進度。"); }
+addEventListener("resize",()=>{ if(document.getElementById("page-map").classList.contains("active")){ placeToken("token",pPos,true); placeToken("token-rival",rivalPos,true); } });
+rs();
+</script>
+</body>
+</html>
