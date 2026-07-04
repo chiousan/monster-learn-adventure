@@ -3,27 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>🎮 原創怪獸學習冒險</title>
+<title>🎮 怪獸學習冒險</title>
 <!-- ============================================================
-     原創怪獸學習冒險（單檔，iPad Safari 直接開，進度存 localStorage）
-     ● 三科世界(數學/國語/英文)＋地形分系：森林=陸、湖泊=海、高山=空
-     ● 陸海空相剋：空剋陸、陸剋海、海剋空；剋到對方 → 對方受傷 +30%
-     ● 99 種原創怪獸(陸海空各33)×10級=990 圖鑑格；怪獸即時生成 SVG(檔案小、跑得順)
-     ● 學習核心：抓怪與對戰都要答對題目；戰勝同級 5 次 → 升 1 級
-     ● 想換成自己的圖：見下方 SPECIES_IMAGES 說明
+     怪獸學習冒險 v3 — 馬力歐式關卡 × 寶可夢式對戰 × 寒暑假複習/預習
+     ● 一～六年級 6 個世界，每世界 12 關（國→數→英循環）＋世界魔王
+     ● 開場選「剛讀完幾年級」＋「寒假/暑假」：
+         暑假＝複習 N 下學期(偏難) ＋ 預習 N+1 上學期(偏易)
+         寒假＝只複習 N 上學期(偏難)；其他世界＝自由挑戰
+     ● 題庫：字詞資料庫×題型模板，每科每學期可抽 150+ 題；數學程式生成
+     ● RPG 全保留：抓怪/捕獸珠/商店/圖鑑990/升級/陸海空相剋(+30%)
+     ● 對戰動畫：衝鋒→招式特效→受擊震動→傷害數字→血條動畫
+     ● 想換怪獸圖：images/編號.png（見圖鑑 #號），缺圖自動用內建動物圖
      ============================================================ -->
 <style>
   :root{
-    --g1-main:#f6b40e; --g1-accent:#2fae60; --g1-dark:#1f8a49;
-    --g3-main:#3a6df0; --g3-accent:#7c4dff; --g3-dark:#5c2fd6;
+    --pa-main:#f6b40e; --pa-accent:#2fae60; --pa-dark:#1f8a49;
+    --pb-main:#3a6df0; --pb-accent:#7c4dff; --pb-dark:#5c2fd6;
     --ink:#2a2f45; --shadow:0 10px 30px rgba(0,0,0,.16); --radius:20px; --ok:#2fae60; --no:#e2433a;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;margin:0;}
   body{font-family:"PingFang TC","Heiti TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;color:var(--ink);
     min-height:100dvh;overflow-x:hidden;user-select:none;-webkit-text-size-adjust:100%;background:linear-gradient(135deg,#fff6dd,#e7efff 55%,#efe8ff);}
-  body.theme-g1{--main:var(--g1-main);--accent:var(--g1-accent);--dark:var(--g1-dark);background:linear-gradient(135deg,#fff6dd,#e8fbe9);}
-  body.theme-g3{--main:var(--g3-main);--accent:var(--g3-accent);--dark:var(--g3-dark);background:linear-gradient(135deg,#e7efff,#efe8ff);}
+  body.theme-a{--main:var(--pa-main);--accent:var(--pa-accent);--dark:var(--pa-dark);background:linear-gradient(135deg,#fff6dd,#e8fbe9);}
+  body.theme-b{--main:var(--pb-main);--accent:var(--pb-accent);--dark:var(--pb-dark);background:linear-gradient(135deg,#e7efff,#efe8ff);}
   button{font-family:inherit;cursor:pointer;}
   .page{display:none;min-height:100dvh;padding:16px clamp(12px,3vw,40px);animation:fade .3s ease;}
   .page.active{display:flex;flex-direction:column;}
@@ -36,48 +39,55 @@
   .home-title{font-size:clamp(26px,6vw,50px);font-weight:900;margin:0 0 4px;background:linear-gradient(90deg,#f6b40e,#2fae60,#3a6df0,#7c4dff);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .home-sub{font-size:clamp(14px,2.5vw,20px);color:#5a6072;font-weight:800;margin:0 0 26px;}
   .card-wrap{display:flex;gap:clamp(14px,3vw,30px);flex-wrap:wrap;justify-content:center;width:100%;max-width:900px;}
-  .role-card{flex:1 1 300px;max-width:420px;min-height:250px;border:none;border-radius:var(--radius);padding:24px 20px;color:#fff;box-shadow:var(--shadow);transition:transform .16s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;}
+  .role-card{flex:1 1 300px;max-width:420px;min-height:240px;border:none;border-radius:var(--radius);padding:24px 20px;color:#fff;box-shadow:var(--shadow);transition:transform .16s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;}
   .role-card:active{transform:scale(.96);} .role-card:hover{transform:translateY(-5px);}
   .role-card .emoji{font-size:clamp(54px,10vw,86px);animation:floaty 3s ease-in-out infinite;}
   .role-card .r-title{font-size:clamp(20px,3.4vw,28px);font-weight:900;}
-  .role-card .r-desc{font-size:clamp(13px,2.1vw,17px);font-weight:700;opacity:.95;}
   .role-card .badge{font-size:14px;font-weight:900;background:rgba(255,255,255,.28);padding:5px 14px;border-radius:999px;}
   @keyframes floaty{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
-  .card-g1{background:linear-gradient(150deg,var(--g1-main),var(--g1-accent));}
-  .card-g3{background:linear-gradient(150deg,var(--g3-main),var(--g3-accent));}
+  .card-a{background:linear-gradient(150deg,var(--pa-main),var(--pa-accent));}
+  .card-b{background:linear-gradient(150deg,var(--pb-main),var(--pb-accent));}
   .topbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
   .topbar .back{background:#fff;color:var(--ink);border:none;border-radius:999px;font-size:17px;font-weight:900;padding:9px 18px;box-shadow:0 4px 12px rgba(0,0,0,.1);}
   .topbar .back:active{transform:scale(.94);}
-  .topbar h2{margin:0;font-size:clamp(17px,3vw,26px);font-weight:900;flex:1;min-width:120px;}
+  .topbar h2{margin:0;font-size:clamp(16px,3vw,25px);font-weight:900;flex:1;min-width:110px;}
   .pill{background:#fff;border-radius:999px;padding:6px 13px;font-weight:900;font-size:15px;box-shadow:0 4px 12px rgba(0,0,0,.1);white-space:nowrap;}
-  .menu-grid{display:flex;flex-direction:column;gap:12px;max-width:720px;width:100%;margin:4px auto;}
-  .menu-card{background:#fff;border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;border:3px solid transparent;transition:transform .12s;}
-  .menu-card:active{transform:scale(.985);} .menu-card.locked{opacity:.55;}
-  .menu-card .m-emoji{font-size:clamp(36px,7vw,52px);} .menu-card .m-title{font-size:clamp(17px,3vw,24px);font-weight:900;}
-  .menu-card .m-sub{font-size:clamp(12px,2.1vw,16px);color:#5a6072;font-weight:700;margin-top:3px;}
-  #page-map{align-items:center;}
-  .map-shell{width:100%;max-width:720px;margin:0 auto;}
-  .board{position:relative;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);gap:4px;aspect-ratio:1/1;width:100%;}
-  .tile{border-radius:11px;background:#fff;box-shadow:0 3px 7px rgba(0,0,0,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2px;position:relative;}
-  .tile .t-ic{font-size:clamp(13px,3.2vw,24px);line-height:1;} .tile .t-lbl{font-size:clamp(7px,1.3vw,10px);font-weight:800;color:#5a6072;margin-top:1px;}
-  .tile.forest{background:linear-gradient(150deg,#fff,#d8f5dd);} .tile.lake{background:linear-gradient(150deg,#fff,#d5eefb);} .tile.mount{background:linear-gradient(150deg,#fff,#e6dcf7);}
-  .tile.gym{background:linear-gradient(150deg,#fff,#ffd9e6);border:2px solid #ff5c93;} .tile.shop{background:linear-gradient(150deg,#fff,#fff0cf);border:2px solid #f0b000;} .tile.start{background:linear-gradient(150deg,#fff,#ffe9b0);border:2px solid #f0b000;}
-  .tile.cur{box-shadow:0 0 0 4px var(--accent),0 4px 10px rgba(0,0,0,.2);z-index:2;}
-  .center-panel{grid-column:2 / 8;grid-row:2 / 8;background:rgba(255,255,255,.78);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:10px;backdrop-filter:blur(3px);}
-  .center-panel .cp-title{font-size:clamp(12px,2.4vw,16px);font-weight:900;text-align:center;}
-  .center-panel .cp-msg{font-size:clamp(11px,2vw,14px);font-weight:700;color:#5a6072;text-align:center;min-height:2.6em;line-height:1.35;}
-  .dice{width:clamp(54px,13vw,80px);height:clamp(54px,13vw,80px);border-radius:16px;background:#fff;border:3px solid var(--main);display:flex;align-items:center;justify-content:center;font-size:clamp(32px,7.5vw,50px);box-shadow:0 6px 14px rgba(0,0,0,.18);}
-  .dice.rolling{animation:shake .5s ease;}
-  @keyframes shake{0%,100%{transform:rotate(0);}25%{transform:rotate(-16deg) scale(1.1);}75%{transform:rotate(16deg) scale(1.1);}}
-  .token{position:absolute;font-size:clamp(17px,4vw,26px);transition:left .2s ease,top .2s ease;transform:translate(-50%,-62%);pointer-events:none;z-index:3;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4));}
-  .token.rival{filter:drop-shadow(0 2px 3px rgba(200,0,60,.5));}
+  .pill.iconbtn{border:none;font-size:17px;}
+  /* 世界選單 */
+  .world-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;max-width:920px;width:100%;margin:4px auto;}
+  .world-card{background:#fff;border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:3px solid transparent;transition:transform .12s;position:relative;}
+  .world-card:active{transform:scale(.985);}
+  .world-card.review{border-color:#ff9f43;} .world-card.preview{border-color:#2fae60;}
+  .world-card .w-head{display:flex;align-items:center;gap:10px;}
+  .world-card .w-emoji{font-size:40px;} .world-card .w-name{font-size:clamp(18px,3vw,24px);font-weight:900;}
+  .world-card .w-tag{font-size:12px;font-weight:900;color:#fff;padding:3px 10px;border-radius:999px;}
+  .w-tag.t-review{background:#ff9f43;} .w-tag.t-preview{background:#2fae60;} .w-tag.t-free{background:#a3aac2;}
+  .world-card .w-prog{font-size:13px;font-weight:800;color:#5a6072;margin-top:8px;}
+  .prog-track{height:10px;background:#eef1f8;border-radius:999px;overflow:hidden;margin-top:6px;}
+  .prog-track i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--main),var(--accent));transition:width .4s;}
+  /* 關卡地圖（馬力歐式路線） */
+  .lv-path{max-width:640px;width:100%;margin:6px auto 30px;display:flex;flex-direction:column;gap:10px;}
+  .lv-row{display:flex;justify-content:center;gap:12px;}
+  .lv-row.alt{justify-content:center;}
+  .lv-node{width:clamp(86px,26vw,120px);border:none;border-radius:18px;background:#fff;box-shadow:0 5px 12px rgba(0,0,0,.12);
+    padding:10px 6px;text-align:center;position:relative;transition:transform .12s;}
+  .lv-node:active{transform:scale(.95);}
+  .lv-node .n-ic{font-size:clamp(26px,7vw,36px);line-height:1.1;}
+  .lv-node .n-nm{font-size:clamp(11px,2.2vw,13px);font-weight:900;margin-top:3px;}
+  .lv-node .n-stars{font-size:clamp(11px,2.2vw,14px);letter-spacing:1px;color:#f6b40e;min-height:1.2em;}
+  .lv-node.locked{opacity:.45;filter:grayscale(.6);}
+  .lv-node.cleared{border:3px solid var(--accent);}
+  .lv-node.boss{background:linear-gradient(150deg,#fff,#ffd9e6);border:3px solid #ff5c93;width:clamp(110px,34vw,150px);}
+  .lv-sub-ch{background:linear-gradient(150deg,#fff,#ffe9c9);} .lv-sub-ma{background:linear-gradient(150deg,#fff,#d5eefb);} .lv-sub-en{background:linear-gradient(150deg,#fff,#e2f7e2);}
+  /* 彈窗 */
   .modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(20,16,40,.55);backdrop-filter:blur(5px);}
   .modal.show{display:flex;animation:fade .3s ease;}
   .modal-box{background:#fff;border-radius:22px;padding:clamp(16px,3.5vw,30px);max-width:560px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.4);animation:zoom .4s cubic-bezier(.18,.9,.3,1.2);max-height:94dvh;overflow-y:auto;}
   @keyframes zoom{from{transform:scale(.7);opacity:0;}to{transform:scale(1);opacity:1;}}
-  .tag{display:inline-block;font-size:13px;font-weight:900;color:#fff;background:var(--main);padding:4px 13px;border-radius:999px;}
+  .tag{display:inline-block;font-size:13px;font-weight:900;color:#fff;background:var(--main,#f6b40e);padding:4px 13px;border-radius:999px;}
   .modal-box h3{font-size:clamp(18px,3.3vw,25px);font-weight:900;margin:10px 0 6px;}
   .q-text{font-size:clamp(18px,3.7vw,27px);font-weight:900;text-align:center;margin:10px 0 12px;min-height:1.3em;}
+  .q-progress{text-align:center;font-size:13px;font-weight:800;color:#6b7186;letter-spacing:2px;}
   .choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .choice{padding:14px;border-radius:14px;border:3px solid #dfe3ee;background:#f7f9fd;font-size:clamp(16px,3vw,22px);font-weight:900;color:var(--ink);}
   .choice:active{transform:scale(.96);} .choice.ok{background:var(--ok);border-color:var(--ok);color:#fff;} .choice.no{background:var(--no);border-color:var(--no);color:#fff;}
@@ -86,53 +96,90 @@
   .mon-name{font-size:clamp(17px,3.2vw,23px);font-weight:900;} .mon-meta{font-size:13px;font-weight:800;color:#5a6072;margin-top:2px;}
   .type-chip{display:inline-block;font-size:12px;font-weight:900;color:#fff;padding:2px 9px;border-radius:999px;}
   .type-land{background:#2fae60;} .type-sea{background:#3aa8f0;} .type-air{background:#7c4dff;}
-  /* 對戰 */
-  .vs-wrap{display:flex;align-items:flex-end;justify-content:space-between;gap:6px;margin:6px 0;}
-  .fighter{flex:1;text-align:center;min-width:0;} .fighter .f-art{width:clamp(70px,20vw,110px);height:clamp(70px,20vw,110px);margin:0 auto;} .fighter .f-art svg{width:100%;height:100%;}
+  /* 設定頁 */
+  .setup-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0;}
+  .setup-grid .gbtn{padding:16px 6px;border-radius:14px;border:3px solid #dfe3ee;background:#f7f9fd;font-size:19px;font-weight:900;}
+  .setup-grid .gbtn.sel{border-color:var(--accent,#2fae60);background:color-mix(in srgb,var(--accent,#2fae60) 14%,#fff);}
+  .season-row{display:flex;gap:10px;margin:6px 0 4px;}
+  .season-row .gbtn{flex:1;padding:14px;border-radius:14px;border:3px solid #dfe3ee;background:#f7f9fd;font-size:18px;font-weight:900;}
+  .season-row .gbtn.sel{border-color:var(--accent,#2fae60);background:color-mix(in srgb,var(--accent,#2fae60) 14%,#fff);}
+  /* 對戰舞台與動畫 */
+  .arena{position:relative;background:linear-gradient(180deg,#dff1ff 0%,#eafbe7 70%,#d8ecd2 100%);border-radius:18px;padding:14px 10px 8px;overflow:hidden;}
+  .vs-wrap{display:flex;align-items:flex-end;justify-content:space-between;gap:6px;position:relative;min-height:130px;}
+  .fighter{flex:1;text-align:center;min-width:0;position:relative;z-index:2;}
+  .fighter .f-art{width:clamp(78px,22vw,120px);height:clamp(78px,22vw,120px);margin:0 auto;transition:transform .2s;}
+  .fighter .f-art svg,.fighter .f-art img{width:100%;height:100%;object-fit:contain;}
   .fighter .f-nm{font-size:13px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .hpbar2{height:12px;border-radius:8px;background:#e6e9f2;overflow:hidden;margin:3px auto;max-width:130px;border:1px solid #cfd4e2;}
-  .hpbar2 i{display:block;height:100%;background:linear-gradient(90deg,#39c46b,#a7e86a);transition:width .3s;}
+  .hpbar2 i{display:block;height:100%;background:linear-gradient(90deg,#39c46b,#a7e86a);transition:width .45s;}
   .hpbar2 i.low{background:linear-gradient(90deg,#e2433a,#ff8a3a);}
-  .team-dots{font-size:13px;letter-spacing:2px;} .vs-mid{font-size:22px;font-weight:900;color:var(--dark);align-self:center;}
-  .dmg-note{text-align:center;font-size:14px;font-weight:900;min-height:1.3em;color:var(--dark);}
+  .team-dots{font-size:13px;letter-spacing:2px;} .vs-mid{font-size:20px;font-weight:900;color:var(--dark,#1f8a49);align-self:center;z-index:1;}
+  .move-banner{text-align:center;font-size:clamp(13px,2.6vw,16px);font-weight:900;min-height:1.5em;color:var(--dark,#1f8a49);margin-top:4px;}
+  .lunge-l{animation:lungeL .55s ease;} .lunge-r{animation:lungeR .55s ease;}
+  @keyframes lungeL{35%{transform:translateX(-34px) scale(1.08);}70%{transform:translateX(6px);}}
+  @keyframes lungeR{35%{transform:translateX(34px) scale(1.08);}70%{transform:translateX(-6px);}}
+  .hit-shake{animation:hitShake .5s ease;}
+  @keyframes hitShake{0%,100%{transform:translateX(0);filter:none;}20%{transform:translateX(-8px);filter:brightness(2.2);}40%{transform:translateX(8px);}60%{transform:translateX(-6px);filter:brightness(1.8);}80%{transform:translateX(4px);}}
+  .proj{position:absolute;top:38%;font-size:clamp(24px,6vw,34px);z-index:3;pointer-events:none;}
+  .proj.go-l{animation:projL .5s linear forwards;} .proj.go-r{animation:projR .5s linear forwards;}
+  @keyframes projL{from{left:68%;opacity:1;}to{left:12%;opacity:.9;}}
+  @keyframes projR{from{left:26%;opacity:1;}to{left:80%;opacity:.9;}}
+  .dmg-float{position:absolute;top:26%;font-size:clamp(20px,5vw,30px);font-weight:900;color:#e2433a;z-index:4;pointer-events:none;animation:dmgUp 1s ease forwards;text-shadow:0 2px 0 #fff;}
+  .dmg-float.crit{color:#ff5c00;font-size:clamp(24px,6vw,36px);}
+  @keyframes dmgUp{from{transform:translateY(0);opacity:1;}to{transform:translateY(-44px);opacity:0;}}
+  /* 商店/圖鑑/隊伍 */
   .shop-item{display:flex;align-items:center;gap:12px;background:#f7f9fd;border-radius:14px;padding:11px 13px;margin:7px 0;}
   .shop-item .s-ic{font-size:32px;} .shop-item .s-body{flex:1;text-align:left;} .shop-item .s-nm{font-weight:900;font-size:16px;} .shop-item .s-desc{font-size:12px;color:#5a6072;font-weight:700;}
   .dex-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;}
-  .dex-item{background:#f4f6fc;border-radius:12px;padding:6px 3px;text-align:center;} .dex-item.have{background:linear-gradient(150deg,#fff,color-mix(in srgb,var(--accent) 14%,#fff));}
+  .dex-item{background:#f4f6fc;border-radius:12px;padding:6px 3px;text-align:center;} .dex-item.have{background:linear-gradient(150deg,#fff,color-mix(in srgb,var(--accent,#2fae60) 14%,#fff));}
   .dex-art{width:100%;aspect-ratio:1/1;} .dex-art svg,.dex-art img{width:100%;height:100%;object-fit:contain;} .dex-art.unknown{display:flex;align-items:center;justify-content:center;font-size:28px;color:#c3c9da;}
-  .dex-nm{font-size:10px;font-weight:800;margin-top:2px;} .dex-lv{font-size:10px;font-weight:900;color:var(--dark);}
+  .dex-nm{font-size:10px;font-weight:800;margin-top:2px;} .dex-lv{font-size:10px;font-weight:900;color:var(--dark,#1f8a49);}
   .party-row{display:flex;align-items:center;gap:10px;background:#f7f9fd;border-radius:12px;padding:8px 10px;margin:6px 0;}
-  .party-row .p-art{width:44px;height:44px;} .party-row .p-art svg{width:100%;height:100%;} .party-row .p-body{flex:1;text-align:left;} .party-row .p-nm{font-weight:900;font-size:15px;}
+  .party-row .p-art{width:44px;height:44px;} .party-row .p-art svg,.party-row .p-art img{width:100%;height:100%;object-fit:contain;} .party-row .p-body{flex:1;text-align:left;} .party-row .p-nm{font-weight:900;font-size:15px;}
   .party-row .p-sub{font-size:11px;color:#5a6072;font-weight:700;}
+  .stars-big{font-size:clamp(28px,7vw,42px);letter-spacing:4px;color:#f6b40e;text-align:center;}
   #confetti{position:fixed;inset:0;pointer-events:none;z-index:75;display:none;}
   .reset-hotspot{position:fixed;right:0;bottom:0;width:60px;height:60px;z-index:80;} .reset-hotspot::after{content:"🔒";position:absolute;right:12px;bottom:10px;font-size:14px;opacity:.15;}
-  @media (max-width:820px){.role-card{flex:1 1 100%;max-width:520px;min-height:200px;}}
+  @media (max-width:820px){.role-card{flex:1 1 100%;max-width:520px;min-height:190px;}}
   @media (max-width:420px){.choices{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
 
+<!-- 首頁（單人版：每台 iPad 一位訓練家，進度各自儲存） -->
 <section id="page-home" class="page active">
-  <h1 class="home-title">🎮 原創怪獸學習冒險</h1>
-  <p class="home-sub">✨ 答對題目 → 抓怪 · 養成 · 打道館，收集 990 圖鑑！✨</p>
+  <h1 class="home-title">🎮 怪獸學習冒險</h1>
+  <p class="home-sub">✨ 六大年級世界 × 闖關學習 × 收服 990 圖鑑！✨</p>
   <div class="card-wrap">
-    <button class="role-card card-g1" onclick="chooseRole('g1')"><span class="badge">小一 → 小二</span><span class="emoji">🧚‍♂️</span><span class="r-title">文字精靈訓練家</span><span class="r-desc">國字 · 注音 · 數學 · 英文</span></button>
-    <button class="role-card card-g3" onclick="chooseRole('g3')"><span class="badge">小三 → 小四</span><span class="emoji">🧙‍♂️</span><span class="r-title">數理魔導訓練家</span><span class="r-desc">詞語 · 乘除 · 分數 · 英文</span></button>
+    <button class="role-card card-a" onclick="startGame()" style="max-width:460px;"><span class="badge" id="p-badge">點我開始</span><span class="emoji">🧚‍♂️</span><span class="r-title">開始冒險</span></button>
   </div>
 </section>
 
-<section id="page-region" class="page">
-  <div class="topbar"><button class="back" onclick="go('page-home')">🏠</button><h2 id="region-role">訓練家</h2>
-    <span class="pill">⭐ Lv<span id="tr-lvl">1</span></span><span class="pill">🪙 <span id="coin-region">0</span></span></div>
-  <div class="menu-grid" id="region-list"></div>
-  <div class="modal-actions"><button class="btn ghost" onclick="openParty()">🎒 我的隊伍</button><button class="btn ghost" onclick="openDex()">📖 圖鑑</button></div>
-  <div class="menu-hint" style="text-align:center;font-size:13px;color:#6b7186;font-weight:700;margin-top:8px;">相剋：空剋陸、陸剋海、海剋空（剋到對方傷害 +30%）</div>
+<!-- 世界選單 -->
+<section id="page-worlds" class="page">
+  <div class="topbar">
+    <button class="back" onclick="go('page-home')">🏠</button>
+    <h2 id="worlds-title">訓練家</h2>
+    <button class="pill iconbtn" onclick="openSetup(false)" title="更改年級/季節">⚙️</button>
+    <span class="pill">⭐Lv<span id="tr-lvl">1</span></span><span class="pill">🪙<span id="coin-w">0</span></span>
+  </div>
+  <div class="world-grid" id="world-grid"></div>
+  <div class="modal-actions" style="margin-top:14px;">
+    <button class="btn ghost" onclick="openParty()">🎒 隊伍</button>
+    <button class="btn ghost" onclick="openDex()">📖 圖鑑</button>
+    <button class="btn ghost" onclick="openShop(false)">🛒 商店</button>
+  </div>
 </section>
 
-<section id="page-map" class="page">
-  <div class="topbar"><button class="back" onclick="go('page-region')">‹ 世界</button><h2 id="map-title">地圖</h2>
-    <span class="pill">⭐<span id="tr-lvl2">1</span></span><span class="pill">🪙 <span id="coin-map">0</span></span></div>
-  <div class="map-shell"><div class="board" id="board"></div></div>
+<!-- 關卡地圖 -->
+<section id="page-levels" class="page">
+  <div class="topbar">
+    <button class="back" onclick="go('page-worlds')">‹ 世界</button>
+    <h2 id="lv-title">一年級世界</h2>
+    <span class="pill">⭐Lv<span id="tr-lvl2">1</span></span><span class="pill">🪙<span id="coin-l">0</span></span>
+  </div>
+  <div style="text-align:center;font-size:13px;font-weight:800;color:#6b7186;margin-bottom:6px;" id="lv-subtitle"></div>
+  <div class="lv-path" id="lv-path"></div>
 </section>
 
 <div class="modal" id="modal"><div class="modal-box" id="modal-box"></div></div>
@@ -150,89 +197,65 @@
 <canvas id="confetti"></canvas>
 <div class="reset-hotspot" id="reset-hotspot"></div>
 <div class="modal" id="reset-modal"><div class="modal-box" style="max-width:400px;text-align:center;">
-  <h3>🔒 家長重置</h3><p style="font-weight:700;color:#555c78;line-height:1.6;">清除這位訓練家的所有進度？</p>
+  <h3>🔒 家長重置</h3><p style="font-weight:700;color:#555c78;line-height:1.6;">清除這位玩家的所有進度？</p>
   <div class="modal-actions"><button class="btn" style="background:linear-gradient(120deg,#ff6b6b,#e23b3b);" onclick="doReset()">✅ 清除</button><button class="btn ghost" onclick="closeModal('reset-modal')">取消</button></div>
 </div></div>
 
 <script>
 "use strict";
-/* ============================================================
-   ★ 想換成自己的怪獸圖：在這裡填  物種編號: "圖片路徑或網址"
-     例： SPECIES_IMAGES[0] = "images/0.png";
-     沒填的用內建原創 SVG。圖檔請放此 HTML 旁的 images/ 資料夾。
-   ============================================================ */
+/* ★ 想換怪獸圖：SPECIES_IMAGES[編號]="圖片路徑"；或放 images/編號.png 自動啟用 */
 const SPECIES_IMAGES = {};
 
-/* ---------- 系別與相剋 ---------- */
+/* ================= 怪獸系統（沿用 v2：99 種 × 10 級） ================= */
 const TYPES = {
-  land:{ n:"陸", key:"land", terrain:"forest", tName:"森林", tIcon:"🌳", hue:120 },
-  sea :{ n:"海", key:"sea",  terrain:"lake",   tName:"湖泊", tIcon:"🏞️", hue:205 },
-  air :{ n:"空", key:"air",  terrain:"mount",  tName:"高山", tIcon:"⛰️", hue:280 }
+  land:{n:"陸",key:"land",hue:120}, sea:{n:"海",key:"sea",hue:205}, air:{n:"空",key:"air",hue:280}
 };
-const BEATS = { air:"land", land:"sea", sea:"air" };      // 攻方剋守方 → 傷害 x1.3
-const TERRAIN_TYPE = { forest:"land", lake:"sea", mount:"air" };
-
-/* ---------- 99 種原創怪獸（陸海空各33，動物命名） ---------- */
+const BEATS = { air:"land", land:"sea", sea:"air" };
 const ANIMALS = {
   land:["熊","虎","兔","狼","鹿","豬","牛","羊","獅","貓","鼠"],
   sea :["鯉","鯊","龜","蝦","蟹","鯨","豚","章魚","水母","河豚","海馬"],
   air :["鷹","蝶","鳥","蜂","鶴","燕","鴉","鸚","梟","隼","鳳"]
 };
-// 每隻怪獸用對應動物 emoji 當主體 → 一眼看得出是熊/魚/鳥（原創、免版權、檔案小）
 const EMOJI = {
   land:["🐻","🐯","🐰","🐺","🦌","🐷","🐮","🐑","🦁","🐱","🐭"],
   sea :["🐟","🦈","🐢","🦐","🦀","🐋","🐬","🐙","🪼","🐡","🐠"],
   air :["🦅","🦋","🐦","🐝","🕊️","🐤","🐧","🦜","🦉","🦆","🦚"]
 };
-const PREFIX = {
-  land:["泡泡","硬殼","蓬蓬"], sea:["水花","珍珠","深海"], air:["旋風","閃電","彩羽"]
-};
+const PREFIX = { land:["泡泡","硬殼","蓬蓬"], sea:["水花","珍珠","深海"], air:["旋風","閃電","彩羽"] };
 const SPECIES = [];
 ["land","sea","air"].forEach(type=>{
   for(let k=0;k<33;k++){
-    const animal=ANIMALS[type][k%11], prefix=PREFIX[type][Math.floor(k/11)];
     const id=SPECIES.length;
-    const hue=TYPES[type].hue + ((k%11)-5)*7 + Math.floor(k/11)*4;
-    SPECIES.push({ id, type, name:prefix+animal, emoji:EMOJI[type][k%11], shape:id%8, hue,
-      baseHP:20+(id%5)*2, baseATK:8+(id%4), baseDEF:6+(id%3) });
+    SPECIES.push({ id, type, name:PREFIX[type][Math.floor(k/11)]+ANIMALS[type][k%11], emoji:EMOJI[type][k%11],
+      hue:TYPES[type].hue+((k%11)-5)*7+Math.floor(k/11)*4, baseHP:20+(id%5)*2, baseATK:8+(id%4), baseDEF:6+(id%3) });
   }
 });
 const SP_BY_TYPE = { land:SPECIES.filter(s=>s.type==="land"), sea:SPECIES.filter(s=>s.type==="sea"), air:SPECIES.filter(s=>s.type==="air") };
-
-/* ---------- 數值：等級成長（每級 +15%，系別專屬 stat 額外 +15%=共30%） ---------- */
-function statAt(sp,lvl){
-  const t=sp.type, L=lvl-1;
-  const hf=Math.pow(t==="land"?1.30:1.15,L), af=Math.pow(t==="sea"?1.30:1.15,L), df=Math.pow(t==="air"?1.30:1.15,L);
-  return { hp:Math.round(sp.baseHP*hf), atk:Math.round(sp.baseATK*af), def:Math.round(sp.baseDEF*df) };
+function statAt(sp,lvl){ const t=sp.type,L=lvl-1;
+  return { hp:Math.round(sp.baseHP*Math.pow(t==="land"?1.30:1.15,L)), atk:Math.round(sp.baseATK*Math.pow(t==="sea"?1.30:1.15,L)), def:Math.round(sp.baseDEF*Math.pow(t==="air"?1.30:1.15,L)) };
 }
-function dmgOf(attSp,attLvl,defSp,defLvl){
-  const a=statAt(attSp,attLvl).atk, d=statAt(defSp,defLvl).def;
-  const mult=(BEATS[attSp.type]===defSp.type)?1.3:1.0;
-  return { dmg:Math.max(1,Math.round(a*mult - d*0.4)), crit:mult>1 };
-}
-
-/* ---------- 怪獸圖：以「對應動物」為主體，放在系別配色的光球上，等級越高越華麗 ----------
-   （原創：標準 emoji 動物＋自繪光球/光環/皇冠；一眼看得出是熊/魚/鳥。想換自己的圖見 SPECIES_IMAGES） */
+function dmgOf(aSp,aLv,dSp,dLv){ const a=statAt(aSp,aLv).atk,d=statAt(dSp,dLv).def; const m=(BEATS[aSp.type]===dSp.type)?1.3:1.0;
+  return { dmg:Math.max(1,Math.round(a*m-d*0.4)), crit:m>1 }; }
+const MOVES = {
+  land:{names:["岩石衝撞","大地裂擊","巨岩粉碎"],e:"🪨"},
+  sea :{names:["水彈射擊","激流衝擊","海嘯咆哮"],e:"💧"},
+  air :{names:["風刃斬","旋風突襲","暴風覺醒"],e:"🌪️"}
+};
+function moveOf(sp,lvl){ const m=MOVES[sp.type]; const i=lvl>=8?2:lvl>=4?1:0; return {name:m.names[i], e:m.e}; }
 function monsterSVG(sp,lvl){
-  lvl=lvl||1;
-  const gid="mg"+sp.id+"_"+lvl;
+  lvl=lvl||1; const gid="mg"+sp.id+"_"+lvl;
   const c1=`hsl(${sp.hue},70%,60%)`, c2=`hsl(${sp.hue},82%,84%)`, dk=`hsl(${sp.hue},55%,32%)`;
-  const aura = lvl>=6 ? `<circle cx="60" cy="56" r="53" fill="none" stroke="${c2}" stroke-width="3.5" opacity=".65"/>` : "";
-  const glow = lvl>=8 ? `<g fill="${c2}" opacity=".9"><path d="M18 30 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3Z"/><path d="M100 24 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5Z"/></g>` : "";
-  const crown = lvl>=10 ? `<path d="M40 15 L49 1 L60 13 L71 1 L80 15 L76 24 L44 24 Z" fill="#ffd24a" stroke="#c79a00" stroke-width="2"/><circle cx="60" cy="7" r="3" fill="#ff5c7a"/>` : "";
-  // 等級小點（顯示目前等級 1~10）
+  const aura=lvl>=6?`<circle cx="60" cy="56" r="53" fill="none" stroke="${c2}" stroke-width="3.5" opacity=".65"/>`:"";
+  const glow=lvl>=8?`<g fill="${c2}" opacity=".9"><path d="M18 30 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3Z"/><path d="M100 24 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5Z"/></g>`:"";
+  const crown=lvl>=10?`<path d="M40 15 L49 1 L60 13 L71 1 L80 15 L76 24 L44 24 Z" fill="#ffd24a" stroke="#c79a00" stroke-width="2"/><circle cx="60" cy="7" r="3" fill="#ff5c7a"/>`:"";
   let pips=""; for(let i=0;i<lvl;i++){ const x=60+(i-(lvl-1)/2)*8.5; pips+=`<circle cx="${x.toFixed(1)}" cy="106" r="2.6" fill="${dk}"/>`; }
   return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
     <defs><radialGradient id="${gid}" cx="42%" cy="32%" r="72%"><stop offset="0" stop-color="${c2}"/><stop offset=".62" stop-color="${c1}"/><stop offset="1" stop-color="${dk}"/></radialGradient></defs>
-    ${aura}${glow}
-    <ellipse cx="60" cy="98" rx="30" ry="6" fill="rgba(0,0,0,.15)"/>
+    ${aura}${glow}<ellipse cx="60" cy="98" rx="30" ry="6" fill="rgba(0,0,0,.15)"/>
     <circle cx="60" cy="56" r="47" fill="url(#${gid})" stroke="${dk}" stroke-width="3"/>
     <circle cx="60" cy="44" r="31" fill="#fff" opacity=".15"/>
-    <text x="60" y="85" font-size="84" text-anchor="middle">${sp.emoji}</text>
-    ${crown}${pips}</svg>`;
+    <text x="60" y="85" font-size="84" text-anchor="middle">${sp.emoji}</text>${crown}${pips}</svg>`;
 }
-/* 自動圖片資料夾：把圖放在此 HTML 旁的 images/ 內、檔名=編號.png（例 images/0.png）。
-   偵測到 images/0.png 存在就整批啟用；缺圖的怪獸自動退回內建動物圖。編號見圖鑑 #號。 */
 let AUTO_IMG=false;
 (function(){ const t=new Image(); t.onload=()=>{ AUTO_IMG=true; }; t.src="images/0.png"; })();
 function monVisual(sp,lvl){
@@ -241,347 +264,838 @@ function monVisual(sp,lvl){
   return monsterSVG(sp,lvl||1);
 }
 function makeSvgEl(id,lvl){ const d=document.createElement("div"); d.style.width="100%"; d.style.height="100%"; d.innerHTML=monsterSVG(SPECIES[id],lvl||1); return d.firstElementChild; }
-function typeChip(t){ return `<span class="type-chip type-${t}">${TYPES[t].tIcon}${TYPES[t].n}系</span>`; }
+function typeChip(t){ return `<span class="type-chip type-${t}">${TYPES[t].n}系</span>`; }
+const BALLS = { wood:{n:"木靈珠",e:"🟢",rate:.5,price:5}, silver:{n:"銀星珠",e:"⚪",rate:.72,price:12}, star:{n:"星輝珠",e:"🌟",rate:.95,price:30} };
 
-/* ---------- 世界（region＝科目） ---------- */
-const REGIONS = [
-  { key:"math", subject:"math", name:"數學大陸", emoji:"🌋", rival:"🤖", desc:"用加減乘除的力量收服怪獸" },
-  { key:"chinese", subject:"chinese", name:"文字森林國", emoji:"🌳", rival:"👺", desc:"用國字與詞語的魔法收服怪獸" },
-  { key:"english", subject:"english", name:"字母海洋", emoji:"🌊", rival:"🦑", desc:"用英文單字的咒語收服怪獸" }
-];
-const GYM_LEADERS = [
-  {name:"岩石館主 磐岩",e:"🧔"},{name:"碧波館主 潮汐",e:"🧜‍♀️"},{name:"雲頂館主 疾風",e:"🧙"},
-  {name:"森林館主 綠影",e:"🧝"},{name:"烈日館主 焱陽",e:"👨‍🚀"},{name:"星辰館主 夜曦",e:"🧛"}
-];
-
-/* ---------- 題庫 ---------- */
+/* ================= 工具 ================= */
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function Q(q,a,ds){return{q,a:String(a),choices:shuffle([String(a),...ds.map(String)])};}
 const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+/* ================= 課程資料庫 =================
+   CH[gs].w: [詞, 注音, 部首(可空), 反義(可空), 難度1~3]
+   CH[gs].f: [填空題, 答案, [干擾×3], 難度]
+   EN[gs].w: [英文, 中文, 難度]   EN[gs].s: [句子題, 答案, [干擾], 難度]
+   gs: "1s"=一上,"1x"=一下 … "6s","6x"  ================= */
+const CH={}, EN={};
+
+CH["1s"]={w:[
+["人","ㄖㄣˊ","人","",1],["大","ㄉㄚˋ","大","小",1],["小","ㄒㄧㄠˇ","小","大",1],["山","ㄕㄢ","山","",1],
+["水","ㄕㄨㄟˇ","水","火",1],["火","ㄏㄨㄛˇ","火","水",1],["天","ㄊㄧㄢ","大","地",1],["地","ㄉㄧˋ","土","天",2],
+["上","ㄕㄤˋ","一","下",1],["下","ㄒㄧㄚˋ","一","上",1],["中","ㄓㄨㄥ","丨","",1],["日","ㄖˋ","日","",1],
+["月","ㄩㄝˋ","月","",1],["木","ㄇㄨˋ","木","",1],["口","ㄎㄡˇ","口","",1],["手","ㄕㄡˇ","手","",1],
+["足","ㄗㄨˊ","足","",2],["耳","ㄦˇ","耳","",2],["目","ㄇㄨˋ","目","",2],["門","ㄇㄣˊ","門","",2],
+["爸","ㄅㄚˋ","父","",1],["媽","ㄇㄚ","女","",1],["哥","ㄍㄜ","口","",1],["姐","ㄐㄧㄝˇ","女","",2],
+["弟","ㄉㄧˋ","弓","",2],["妹","ㄇㄟˋ","女","",2],["我","ㄨㄛˇ","戈","",1],["你","ㄋㄧˇ","人","",1],
+["他","ㄊㄚ","人","",1],["好","ㄏㄠˇ","女","壞",1],["來","ㄌㄞˊ","人","去",2],["去","ㄑㄩˋ","厶","來",2],
+["多","ㄉㄨㄛ","夕","少",2],["少","ㄕㄠˇ","小","多",2],["開","ㄎㄞ","門","關",2],["白","ㄅㄞˊ","白","黑",2],
+["牛","ㄋㄧㄡˊ","牛","",2],["羊","ㄧㄤˊ","羊","",2],["鳥","ㄋㄧㄠˇ","鳥","",2],["花","ㄏㄨㄚ","艸","",2]
+],f:[
+["「太陽」出來了，天空亮亮的。「太陽」是指哪個字？","日",["月","星","雲"],1],
+["一＿＿鳥","隻",["本","朵","台"],1],
+["一＿＿書","本",["隻","朵","條"],2],
+["句子結尾要加什麼？","句號。",["逗號，","問號？","不用加"],2],
+["「我＿＿學校。」","去",["吃","睡","飛"],1],
+["天黑了，「月亮」出來了。月亮在哪裡？","天上",["水裡","地下","山洞"],1]
+]};
+CH["1x"]={w:[
+["春","ㄔㄨㄣ","日","",2],["夏","ㄒㄧㄚˋ","夂","",2],["秋","ㄑㄧㄡ","禾","",2],["冬","ㄉㄨㄥ","冫","",2],
+["風","ㄈㄥ","風","",1],["雨","ㄩˇ","雨","",1],["雲","ㄩㄣˊ","雨","",2],["電","ㄉㄧㄢˋ","雨","",2],
+["早","ㄗㄠˇ","日","晚",1],["晚","ㄨㄢˇ","日","早",2],["明","ㄇㄧㄥˊ","日","暗",2],["星","ㄒㄧㄥ","日","",2],
+["樹","ㄕㄨˋ","木","",2],["林","ㄌㄧㄣˊ","木","",1],["森","ㄙㄣ","木","",2],["草","ㄘㄠˇ","艸","",1],
+["葉","ㄧㄝˋ","艸","",2],["蟲","ㄔㄨㄥˊ","虫","",2],["魚","ㄩˊ","魚","",1],["貓","ㄇㄠ","犬","",1],
+["狗","ㄍㄡˇ","犬","",1],["馬","ㄇㄚˇ","馬","",1],["雞","ㄐㄧ","隹","",2],["鴨","ㄧㄚ","鳥","",2],
+["前","ㄑㄧㄢˊ","刀","後",1],["後","ㄏㄡˋ","彳","前",1],["左","ㄗㄨㄛˇ","工","右",1],["右","ㄧㄡˋ","口","左",1],
+["快","ㄎㄨㄞˋ","心","慢",2],["慢","ㄇㄢˋ","心","快",2],["高","ㄍㄠ","高","低",2],["長","ㄔㄤˊ","長","短",2],
+["朋","ㄆㄥˊ","月","",2],["友","ㄧㄡˇ","又","",2],["學","ㄒㄩㄝˊ","子","",2],["校","ㄒㄧㄠˋ","木","",2],
+["讀","ㄉㄨˊ","言","",3],["寫","ㄒㄧㄝˇ","宀","",3],["畫","ㄏㄨㄚˋ","田","",2],["唱","ㄔㄤˋ","口","",2]
+],f:[
+["「森」有幾個木？","3",["2","4","5"],2],
+["「林」有幾個木？","2",["1","3","4"],1],
+["一＿＿花","朵",["隻","本","台"],1],
+["「小鳥在樹上＿＿。」","唱歌",["游泳","睡覺","寫字"],1],
+["「明」由哪兩個字組成？","日月",["目月","日目","月月"],2],
+["下雨了，出門要帶＿＿。","雨傘",["球拍","鉛筆","碗筷"],1]
+]};
+EN["1s"]={w:[
+["apple","蘋果",1],["banana","香蕉",2],["cat","貓",1],["dog","狗",1],["egg","蛋",1],["fish","魚",1],
+["girl","女孩",2],["boy","男孩",2],["hand","手",2],["head","頭",2],["one","一",1],["two","二",1],
+["three","三",1],["four","四",2],["five","五",1],["red","紅色",1],["blue","藍色",1],["yellow","黃色",2],
+["green","綠色",2],["big","大的",2],["small","小的",2],["book","書",2],["pen","筆",2],["hello","你好",1],
+["bye","再見",1],["mom","媽媽",1],["dad","爸爸",1],["bird","鳥",2],["bear","熊",2],["milk","牛奶",2],
+["water","水",2],["sun","太陽",2],["moon","月亮",2],["star","星星",2],["car","汽車",2],["bus","公車",2],
+["ball","球",1],["cake","蛋糕",2],["hat","帽子",3],["cup","杯子",3],["box","箱子",3],["six","六",2],
+["seven","七",3],["ten","十",2],["pig","豬",1]
+],s:[
+["Hello, I ___ Amy.","am",["is","are","be"],2],
+["This is ___ apple.","an",["a","the","two"],3],
+["I see a ___.（狗）","dog",["cat","run","red"],1],
+["「謝謝」的英文是？","Thank you.",["Bye.","Hello.","Sorry."],1],
+["One, two, ___!","three",["tree","third","too"],1],
+["The sun is ___.（紅色）","red",["read","rad","rud"],2]
+]};
+EN["1x"]={w:[
+["ant","螞蟻",2],["bee","蜜蜂",2],["cow","牛",1],["duck","鴨子",2],["elephant","大象",3],["frog","青蛙",2],
+["goat","山羊",3],["horse","馬",2],["rabbit","兔子",2],["lion","獅子",2],["tiger","老虎",2],["monkey","猴子",2],
+["mouse","老鼠",2],["eight","八",2],["nine","九",2],["black","黑色",2],["white","白色",2],["pink","粉紅色",2],
+["orange","橘色",2],["eye","眼睛",2],["ear","耳朵",2],["nose","鼻子",2],["mouth","嘴巴",2],["face","臉",2],
+["arm","手臂",3],["leg","腿",2],["run","跑",2],["jump","跳",2],["walk","走",2],["swim","游泳",2],
+["fly","飛",2],["sing","唱歌",2],["dance","跳舞",3],["eat","吃",1],["drink","喝",2],["sleep","睡覺",2],
+["happy","開心的",2],["sad","難過的",2],["hot","熱的",2],["cold","冷的",2],["desk","書桌",3],["chair","椅子",3],
+["door","門",2],["window","窗戶",3],["bag","書包",2]
+],s:[
+["I can ___.（游泳）","swim",["swan","swin","sing"],2],
+["The pig is ___.（粉紅色）","pink",["pig","pin","punk"],2],
+["I have two ___.（眼睛）","eyes",["eye","ears","noses"],3],
+["A ___ can fly.（鳥）","bird",["pig","cow","fish"],1],
+["I ___ happy.","am",["is","are","do"],2],
+["He can ___ fast.（跑）","run",["ran","runs","running"],3]
+]};
+
+CH["2s"]={w:[
+["秋","ㄑㄧㄡ","禾","",1],["晴","ㄑㄧㄥˊ","日","陰",2],["陰","ㄧㄣ","阜","晴",2],["暖","ㄋㄨㄢˇ","日","涼",2],
+["涼","ㄌㄧㄤˊ","水","暖",2],["晨","ㄔㄣˊ","日","",2],["夜","ㄧㄝˋ","夕","",2],["空","ㄎㄨㄥ","穴","",2],
+["海","ㄏㄞˇ","水","",1],["河","ㄏㄜˊ","水","",1],["湖","ㄏㄨˊ","水","",2],["船","ㄔㄨㄢˊ","舟","",2],
+["橋","ㄑㄧㄠˊ","木","",2],["路","ㄌㄨˋ","足","",1],["街","ㄐㄧㄝ","行","",2],["城","ㄔㄥˊ","土","",2],
+["鄉","ㄒㄧㄤ","邑","",3],["遠","ㄩㄢˇ","辵","近",2],["近","ㄐㄧㄣˋ","辵","遠",2],["新","ㄒㄧㄣ","斤","舊",1],
+["舊","ㄐㄧㄡˋ","臼","新",2],["買","ㄇㄞˇ","貝","賣",2],["賣","ㄇㄞˋ","貝","買",2],["送","ㄙㄨㄥˋ","辵","",2],
+["接","ㄐㄧㄝ","手","",2],["念","ㄋㄧㄢˋ","心","",2],["背","ㄅㄟˋ","肉","",2],["考","ㄎㄠˇ","老","",2],
+["試","ㄕˋ","言","",2],["班","ㄅㄢ","玉","",2],["級","ㄐㄧˊ","糸","",2],["師","ㄕ","巾","",1],
+["生","ㄕㄥ","生","",1],["課","ㄎㄜˋ","言","",2],["本","ㄅㄣˇ","木","",1],["筆","ㄅㄧˇ","竹","",1],
+["紙","ㄓˇ","糸","",2],["夏","ㄒㄧㄚˋ","夂","",2]
+],f:[
+["「秋天到了，樹葉變＿色。」","黃",["紫","藍","粉"],1],
+["量詞：一＿＿橋","座",["隻","條","本"],2],
+["「上課要＿＿聽講。」","專心",["大聲","快跑","睡覺"],1],
+["「明天要考試，今晚要＿＿。」","複習",["看電視","玩水","睡懶覺"],2],
+["量詞：一＿＿船","艘",["台","隻","座"],3],
+["「弟弟把玩具＿＿好了。」","收",["丟","踢","咬"],1]
+]};
+CH["2x"]={w:[
+["綠","ㄌㄩˋ","糸","",1],["紅","ㄏㄨㄥˊ","糸","",1],["黃","ㄏㄨㄤˊ","黃","",1],["黑","ㄏㄟ","黑","白",1],
+["亮","ㄌㄧㄤˋ","亠","暗",2],["暗","ㄢˋ","日","亮",2],["乾","ㄍㄢ","乙","濕",2],["濕","ㄕ","水","乾",2],
+["洗","ㄒㄧˇ","水","",1],["掃","ㄙㄠˇ","手","",2],["擦","ㄘㄚ","手","",2],["幫","ㄅㄤ","巾","",2],
+["忙","ㄇㄤˊ","心","閒",2],["飯","ㄈㄢˋ","食","",1],["菜","ㄘㄞˋ","艸","",1],["湯","ㄊㄤ","水","",2],
+["碗","ㄨㄢˇ","石","",2],["筷","ㄎㄨㄞˋ","竹","",2],["桌","ㄓㄨㄛ","木","",1],["椅","ㄧˇ","木","",2],
+["床","ㄔㄨㄤˊ","广","",2],["窗","ㄔㄨㄤ","穴","",2],["燈","ㄉㄥ","火","",2],["影","ㄧㄥˇ","彡","",3],
+["爬","ㄆㄚˊ","爪","",2],["笑","ㄒㄧㄠˋ","竹","哭",1],["哭","ㄎㄨ","口","笑",1],["說","ㄕㄨㄛ","言","",1],
+["聽","ㄊㄧㄥ","耳","",2],["看","ㄎㄢˋ","目","",1],["想","ㄒㄧㄤˇ","心","",2],["記","ㄐㄧˋ","言","忘",2],
+["忘","ㄨㄤˋ","心","記",2],["游","ㄧㄡˊ","水","",2],["跳","ㄊㄧㄠˋ","足","",1],["站","ㄓㄢˋ","立","坐",2],
+["坐","ㄗㄨㄛˋ","土","站",2],["睡","ㄕㄨㄟˋ","目","醒",2]
+],f:[
+["「春天來了，花都＿＿了。」","開",["關","掉","收"],1],
+["「吃飯前要先＿手。」","洗",["擦","踢","畫"],1],
+["量詞：一＿＿椅子","把",["頭","條","粒"],2],
+["「妹妹跌倒了，＿＿了起來。」","哭",["笑","唱","飛"],1],
+["「他跑得像風一樣快」是說他？","跑很快",["會飛","在唱歌","力氣大"],2],
+["量詞：一＿＿燈","盞",["隻","本","朵"],3]
+]};
+EN["2s"]={w:[
+["teacher","老師",2],["student","學生",2],["school","學校",1],["classroom","教室",3],["friend","朋友",2],
+["morning","早上",2],["night","晚上",2],["today","今天",2],["good","好的",1],["bad","壞的",2],
+["yes","是",1],["no","不是",1],["please","請",2],["sorry","對不起",2],["eleven","十一",2],
+["twelve","十二",2],["thirteen","十三",3],["fourteen","十四",3],["fifteen","十五",2],["chair","椅子",2],
+["ruler","尺",2],["eraser","橡皮擦",3],["pencil","鉛筆",2],["crayon","蠟筆",3],["glue","膠水",3],
+["scissors","剪刀",3],["read","閱讀",2],["write","寫",2],["draw","畫畫",2],["open","打開",2],
+["close","關上",2],["stand","站",2],["sit","坐",2],["listen","聽",2],["look","看",2],
+["clap","拍手",3],["board","黑板",3],["bell","鐘",3],["name","名字",2],["new","新的",2]
+],s:[
+["Open the ___.（門）","door",["dog","desk","duck"],1],
+["Please ___ down.（坐）","sit",["sat","set","site"],2],
+["I go to ___ at seven.","school",["pool","cool","tool"],2],
+["___ you!（謝謝）","Thank",["Think","Thin","Tank"],1],
+["Ten, eleven, ___","twelve",["twenty","two","ten"],2],
+["The teacher is ___ the classroom.","in",["on","under","of"],3]
+]};
+EN["2x"]={w:[
+["breakfast","早餐",3],["lunch","午餐",2],["dinner","晚餐",2],["rice","米飯",2],["noodle","麵",2],
+["bread","麵包",2],["juice","果汁",2],["tea","茶",1],["soup","湯",2],["fruit","水果",2],
+["grape","葡萄",3],["lemon","檸檬",3],["mango","芒果",2],["peach","水蜜桃",3],["melon","甜瓜",3],
+["hungry","餓的",2],["thirsty","渴的",3],["yummy","好吃的",2],["sister","姊妹",2],["brother","兄弟",2],
+["grandma","奶奶",2],["grandpa","爺爺",2],["baby","嬰兒",1],["family","家人",2],["home","家",1],
+["sunny","晴天的",2],["rainy","下雨的",2],["cloudy","多雲的",3],["windy","颳風的",3],["snowy","下雪的",3],
+["spring","春天",2],["summer","夏天",2],["fall","秋天",3],["winter","冬天",2],["umbrella","雨傘",3],
+["coat","外套",3],["shirt","襯衫",3],["shoes","鞋子",2],["socks","襪子",2],["rain","雨",1]
+],s:[
+["I eat ___ in the morning.（早餐）","breakfast",["lunch","dinner","supper"],2],
+["It is ___ today. Take an umbrella!","rainy",["sunny","funny","bunny"],2],
+["My ___ is my dad's mom.（奶奶）","grandma",["grandpa","sister","aunt"],2],
+["I am ___. I want water.","thirsty",["thirteen","Thursday","thirty"],3],
+["In ___, it snows.（冬天）","winter",["summer","spring","window"],2],
+["Put on your ___.（鞋子）","shoes",["shoe","socks","hats"],2]
+]};
+
+CH["3s"]={w:[
+["努","ㄋㄨˇ","力","",2],["認","ㄖㄣˋ","言","",2],["真","ㄓㄣ","目","假",2],["假","ㄐㄧㄚˇ","人","真",2],
+["借","ㄐㄧㄝˋ","人","還",2],["還","ㄏㄨㄢˊ","辵","借",2],["拿","ㄋㄚˊ","手","放",1],["放","ㄈㄤˋ","攴","拿",2],
+["輕","ㄑㄧㄥ","車","重",2],["重","ㄓㄨㄥˋ","里","輕",2],["深","ㄕㄣ","水","淺",2],["淺","ㄑㄧㄢˇ","水","深",2],
+["寬","ㄎㄨㄢ","宀","窄",2],["窄","ㄓㄞˇ","穴","寬",3],["勝","ㄕㄥˋ","力","敗",2],["敗","ㄅㄞˋ","攴","勝",2],
+["始","ㄕˇ","女","終",3],["終","ㄓㄨㄥ","糸","始",3],["集","ㄐㄧˊ","隹","",2],["合","ㄏㄜˊ","口","分",2],
+["分","ㄈㄣ","刀","合",2],["組","ㄗㄨˇ","糸","",2],["隊","ㄉㄨㄟˋ","阜","",2],["旗","ㄑㄧˊ","方","",2],
+["鼓","ㄍㄨˇ","鼓","",2],["賽","ㄙㄞˋ","貝","",2],["獎","ㄐㄧㄤˇ","犬","",2],["練","ㄌㄧㄢˋ","糸","",2],
+["習","ㄒㄧˊ","羽","",2],["題","ㄊㄧˊ","頁","",2],["答","ㄉㄚˊ","竹","問",2],["問","ㄨㄣˋ","口","答",2],
+["錯","ㄘㄨㄛˋ","金","對",2],["對","ㄉㄨㄟˋ","寸","錯",2],["勇","ㄩㄥˇ","力","",2],["敢","ㄍㄢˇ","攴","",2]
+],f:[
+["「一＿＿光陰一寸金」","寸",["尺","丈","分"],2],
+["「銀行」的「行」讀？","ㄏㄤˊ",["ㄒㄧㄥˊ","ㄏㄥˊ","ㄒㄧㄤˊ"],2],
+["「畫蛇添足」的意思接近？","多此一舉",["非常勇敢","很有創意","動作很快"],2],
+["「快樂」的「樂」讀？","ㄌㄜˋ",["ㄩㄝˋ","ㄧㄠˋ","ㄌㄠˊ"],2],
+["「七上八＿」","下",["九","十","中"],1],
+["「因為下雨，＿＿帶傘。」","所以",["但是","雖然","而且"],2]
+]};
+CH["3x"]={w:[
+["溪","ㄒㄧ","水","",2],["谷","ㄍㄨˇ","谷","",2],["岩","ㄧㄢˊ","山","",2],["洞","ㄉㄨㄥˋ","水","",2],
+["島","ㄉㄠˇ","山","",2],["岸","ㄢˋ","山","",2],["浪","ㄌㄤˋ","水","",2],["潮","ㄔㄠˊ","水","",3],
+["沙","ㄕㄚ","水","",2],["灘","ㄊㄢ","水","",3],["旅","ㄌㄩˇ","方","",2],["遊","ㄧㄡˊ","辵","",2],
+["訪","ㄈㄤˇ","言","",3],["探","ㄊㄢˋ","手","",3],["險","ㄒㄧㄢˇ","阜","",2],["豐","ㄈㄥ","豆","",3],
+["富","ㄈㄨˋ","宀","窮",2],["窮","ㄑㄩㄥˊ","穴","富",3],["飽","ㄅㄠˇ","食","餓",2],["餓","ㄜˋ","食","飽",2],
+["冷","ㄌㄥˇ","冫","熱",1],["熱","ㄖㄜˋ","火","冷",1],["靜","ㄐㄧㄥˋ","青","吵",2],["吵","ㄔㄠˇ","口","靜",2],
+["淨","ㄐㄧㄥˋ","水","髒",2],["髒","ㄗㄤ","骨","淨",3],["勤","ㄑㄧㄣˊ","力","懶",3],["懶","ㄌㄢˇ","心","勤",3],
+["誠","ㄔㄥˊ","言","",3],["實","ㄕˊ","宀","",2],["謙","ㄑㄧㄢ","言","驕",3],["驕","ㄐㄧㄠ","馬","謙",3],
+["禮","ㄌㄧˇ","示","",2],["貌","ㄇㄠˋ","豸","",3],["恩","ㄣ","心","",3],["惠","ㄏㄨㄟˋ","心","",3]
+],f:[
+["「守株待＿」","兔",["鼠","雞","馬"],2],
+["「亡羊補牢」的意思？","出事後及時補救",["不勞而獲","一次成功","白費力氣"],2],
+["「長大」的「長」讀？","ㄓㄤˇ",["ㄔㄤˊ","ㄓㄤˋ","ㄔㄤˇ"],2],
+["「他難過得＿＿大哭。」","放聲",["放手","放假","放學"],2],
+["「井底之蛙」形容？","見識淺短",["很勇敢","很聰明","很努力"],3],
+["「雖然累，＿＿很開心。」","但是",["所以","因為","於是"],2]
+]};
+EN["3s"]={w:[
+["English","英語",2],["Chinese","國語",2],["math","數學",2],["music","音樂",2],["art","美術",3],
+["PE","體育",2],["class","課",2],["homework","回家作業",3],["test","考試",2],["question","問題",3],
+["answer","答案",3],["clock","時鐘",2],["watch","手錶",3],["time","時間",2],["hour","小時",3],
+["minute","分鐘",3],["week","星期",2],["month","月份",3],["year","年",2],["Monday","星期一",2],
+["Tuesday","星期二",3],["Wednesday","星期三",3],["Thursday","星期四",3],["Friday","星期五",2],
+["Saturday","星期六",2],["Sunday","星期日",2],["play","玩",1],["study","讀書",2],["learn","學習",3],
+["teach","教",3],["help","幫助",2],["make","做",2],["cook","煮飯",2],["clean","打掃",2],
+["wash","洗",2],["ride","騎",3],["bike","腳踏車",2],["kite","風箏",2],["park","公園",2],
+["zoo","動物園",2],["farm","農場",3],["today","今天",1]
+],s:[
+["What day is today? — It is ___.（星期五）","Friday",["Fryday","Firday","Freeday"],2],
+["I ___ my homework every day.","do",["does","doing","did"],3],
+["She ___ TV at night.","watches",["watch","watching","watched"],3],
+["What time ___ it?","is",["are","am","be"],2],
+["We have ___ class on Monday.（音樂）","music",["mouse","moose","mush"],2],
+["Let's go to the ___.（動物園）","zoo",["zero","zoom","200"],1]
+]};
+EN["3x"]={w:[
+["hospital","醫院",3],["library","圖書館",3],["store","商店",2],["market","市場",3],["restaurant","餐廳",3],
+["station","車站",3],["train","火車",2],["plane","飛機",2],["boat","船",2],["taxi","計程車",2],
+["doctor","醫生",2],["nurse","護士",3],["chef","廚師",3],["driver","司機",3],["farmer","農夫",3],
+["police","警察",2],["angry","生氣的",2],["tired","累的",2],["scared","害怕的",3],["excited","興奮的",3],
+["bored","無聊的",3],["strong","強壯的",2],["weak","虛弱的",3],["tall","高的",2],["short","矮的",2],
+["fast","快的",2],["slow","慢的",2],["young","年輕的",3],["old","老的",2],["can","能夠",2],
+["speak","說",3],["count","數數",3],["spell","拼字",3],["climb","爬",3],["throw","丟",3],
+["catch","接住",3],["kick","踢",2],["hit","打",2],["win","贏",2],["lose","輸",3]
+],s:[
+["He is a ___. He helps sick people.","doctor",["driver","farmer","singer"],2],
+["I go to the ___ to read books.","library",["hospital","market","station"],3],
+["A plane is ___ than a train.","faster",["fast","fastest","more fast"],3],
+["___ you swim? — Yes, I can.","Can",["Do","Are","Is"],2],
+["The turtle is very ___.","slow",["snow","slot","slew"],2],
+["Don't be ___. The dog is friendly.","scared",["scarf","score","scan"],3]
+]};
+CH["4s"]={w:[
+["專","ㄓㄨㄢ","寸","",2],["注","ㄓㄨˋ","水","",2],["細","ㄒㄧˋ","糸","粗",2],["粗","ㄘㄨ","米","細",2],
+["滿","ㄇㄢˇ","水","空",2],["希","ㄒㄧ","巾","",2],["望","ㄨㄤˋ","月","",2],["夢","ㄇㄥˋ","夕","",2],
+["毅","ㄧˋ","殳","",3],["恆","ㄏㄥˊ","心","",3],["挫","ㄘㄨㄛˋ","手","",3],["折","ㄓㄜˊ","手","",2],
+["歷","ㄌㄧˋ","止","",2],["史","ㄕˇ","口","",2],["博","ㄅㄛˊ","十","",3],["館","ㄍㄨㄢˇ","食","",2],
+["展","ㄓㄢˇ","尸","",2],["覽","ㄌㄢˇ","見","",3],["環","ㄏㄨㄢˊ","玉","",2],["境","ㄐㄧㄥˋ","土","",2],
+["保","ㄅㄠˇ","人","",2],["護","ㄏㄨˋ","言","",2],["汙","ㄨ","水","",3],["染","ㄖㄢˇ","木","",3],
+["資","ㄗ","貝","",3],["源","ㄩㄢˊ","水","",2],["節","ㄐㄧㄝˊ","竹","",2],["約","ㄩㄝ","糸","",2],
+["圾","ㄙㄜˋ","土","",3],["回","ㄏㄨㄟˊ","囗","",1],["收","ㄕㄡ","攴","",2],["淨","ㄐㄧㄥˋ","水","",2],
+["廢","ㄈㄟˋ","广","",3],["棄","ㄑㄧˋ","木","",3]
+],f:[
+["「川流不＿」","息",["惜","西","系"],2],
+["「雲像棉花糖」用了什麼修辭？","譬喻",["擬人","誇飾","設問"],2],
+["「花兒對我微笑」用了？","擬人",["譬喻","誇飾","對比"],2],
+["「再接再＿」","厲",["勵","歷","力"],3],
+["「明察秋＿」","毫",["豪","壕","嚎"],3],
+["「白髮三千丈」用了？","誇飾",["擬人","譬喻","借代"],3]
+]};
+CH["4x"]={w:[
+["寧","ㄋㄧㄥˊ","宀","",3],["默","ㄇㄛˋ","黑","",2],["察","ㄔㄚˊ","宀","",2],["觀","ㄍㄨㄢ","見","",2],
+["描","ㄇㄧㄠˊ","手","",2],["繪","ㄏㄨㄟˋ","糸","",3],["彩","ㄘㄞˇ","彡","",2],["虹","ㄏㄨㄥˊ","虫","",2],
+["霞","ㄒㄧㄚˊ","雨","",3],["霧","ㄨˋ","雨","",2],["露","ㄌㄨˋ","雨","",3],["霜","ㄕㄨㄤ","雨","",3],
+["瀑","ㄆㄨˋ","水","",3],["布","ㄅㄨˋ","巾","",1],["峰","ㄈㄥ","山","",2],["嶺","ㄌㄧㄥˇ","山","",3],
+["壯","ㄓㄨㄤˋ","士","",2],["麗","ㄌㄧˋ","鹿","",2],["優","ㄧㄡ","人","劣",2],["劣","ㄌㄧㄝˋ","力","優",3],
+["增","ㄗㄥ","土","減",2],["減","ㄐㄧㄢˇ","水","增",2],["繁","ㄈㄢˊ","糸","簡",3],["簡","ㄐㄧㄢˇ","竹","繁",2],
+["獲","ㄏㄨㄛˋ","犬","",3],["得","ㄉㄜˊ","彳","失",2],["失","ㄕ","大","得",2],["即","ㄐㄧˊ","卩","",3],
+["刻","ㄎㄜˋ","刀","",2],["仍","ㄖㄥˊ","人","",3],["然","ㄖㄢˊ","火","",2],["奇","ㄑㄧˊ","大","",2],
+["妙","ㄇㄧㄠˋ","女","",2],["幻","ㄏㄨㄢˋ","幺","",3]
+],f:[
+["「美輪美＿」","奐",["換","喚","渙"],3],
+["「一如＿往」","既",["即","及","急"],3],
+["「段落大意」是指？","整段的主要意思",["第一句話","最後一句","最長的句子"],2],
+["「風輕輕唱歌」用了？","擬人",["譬喻","誇飾","對偶"],2],
+["「豐富」的近義詞？","充足",["缺乏","貧乏","稀少"],2],
+["「增加」的反義詞？","減少",["增多","加倍","累積"],1]
+]};
+EN["4s"]={w:[
+["bedroom","臥室",3],["bathroom","浴室",3],["kitchen","廚房",3],["living room","客廳",3],["garden","花園",3],
+["upstairs","樓上",3],["downstairs","樓下",3],["hobby","嗜好",3],["movie","電影",2],["game","遊戲",1],
+["sport","運動",2],["baseball","棒球",2],["basketball","籃球",2],["soccer","足球",2],["badminton","羽球",3],
+["ping-pong","桌球",2],["swimming","游泳",2],["reading","閱讀",2],["singing","唱歌",2],["dancing","跳舞",2],
+["always","總是",3],["usually","通常",3],["often","常常",3],["sometimes","有時候",3],["never","從不",3],
+["before","之前",3],["after","之後",3],["early","早的",2],["late","晚的",2],["o'clock","點鐘",2],
+["brush","刷",2],["teeth","牙齒",2],["wake","醒來",3],["get up","起床",2],["go to bed","上床睡覺",2],
+["taller","更高的",3],["shorter","更矮的",3],["bigger","更大的",3],["smaller","更小的",3],["favorite","最喜歡的",3]
+],s:[
+["I ___ my teeth every morning.","brush",["wash","cut","draw"],2],
+["He is ___ than his brother.（更高）","taller",["tall","tallest","more tall"],3],
+["My ___ sport is soccer.（最喜歡的）","favorite",["favor","flavor","forever"],3],
+["She ___ gets up at six.（總是）","always",["never","away","also"],3],
+["We cook in the ___.","kitchen",["bedroom","bathroom","garden"],2],
+["___ do you get up? — At seven.","When",["Where","Who","Which"],3]
+]};
+EN["4x"]={w:[
+["money","錢",2],["dollar","元",2],["price","價格",3],["cheap","便宜的",3],["expensive","昂貴的",3],
+["buy","買",2],["sell","賣",3],["pay","付錢",3],["shop","商店",2],["supermarket","超級市場",3],
+["left","左邊",2],["right","右邊",2],["straight","直走",3],["turn","轉彎",3],["corner","轉角",3],
+["next to","在旁邊",3],["between","在中間",3],["behind","在後面",3],["in front of","在前面",3],["near","在附近",2],
+["far","遠的",2],["map","地圖",2],["street","街道",3],["road","馬路",2],["bridge","橋",3],
+["hundred","一百",3],["thousand","一千",3],["some","一些",2],["many","很多",2],["much","很多（不可數）",3],
+["want","想要",2],["need","需要",3],["how much","多少錢",2],["how many","多少個",3],["wallet","錢包",3],
+["list","清單",3],["fresh","新鮮的",3],["sweet","甜的",2],["sour","酸的",3],["salty","鹹的",3]
+],s:[
+["___ is this pen? — Ten dollars.","How much",["How many","How old","How long"],2],
+["The bank is ___ the school.（在旁邊）","next to",["under","into","out of"],3],
+["Turn ___ at the corner.（右）","right",["write","light","night"],2],
+["I want ___ apples.","some",["much","a little","any"],3],
+["This toy is too ___. I have no money.","expensive",["expand","cheap","excited"],3],
+["He ___ a new bag.（需要）","needs",["need","needing","needed"],3]
+]};
+
+CH["5s"]={w:[
+["儉","ㄐㄧㄢˇ","人","奢",3],["奢","ㄕㄜ","大","儉",3],["謹","ㄐㄧㄣˇ","言","",3],["慎","ㄕㄣˋ","心","",3],
+["猶","ㄧㄡˊ","犬","",3],["豫","ㄩˋ","豕","",3],["果","ㄍㄨㄛˇ","木","",1],["斷","ㄉㄨㄢˋ","斤","續",2],
+["續","ㄒㄩˋ","糸","斷",3],["聚","ㄐㄩˋ","耳","散",2],["散","ㄙㄢˋ","攴","聚",2],["榮","ㄖㄨㄥˊ","木","辱",3],
+["辱","ㄖㄨˋ","辰","榮",3],["盛","ㄕㄥˋ","皿","衰",3],["衰","ㄕㄨㄞ","衣","盛",3],["矛","ㄇㄠˊ","矛","盾",3],
+["盾","ㄉㄨㄣˋ","目","矛",3],["攻","ㄍㄨㄥ","攴","守",2],["守","ㄕㄡˇ","宀","攻",2],["益","ㄧˋ","皿","損",3],
+["損","ㄙㄨㄣˇ","手","益",3],["譽","ㄩˋ","言","毀",3],["毀","ㄏㄨㄟˇ","殳","譽",3],["慷","ㄎㄤ","心","",3],
+["慨","ㄎㄞˇ","心","",3],["吝","ㄌㄧㄣˋ","口","",3],["嗇","ㄙㄜˋ","口","",3],["虛","ㄒㄩ","虍","實",3],
+["實","ㄕˊ","宀","虛",2],["傲","ㄠˋ","人","謙",3],["卑","ㄅㄟ","十","尊",3],["尊","ㄗㄨㄣ","寸","卑",2],
+["敬","ㄐㄧㄥˋ","攴","",2],["慕","ㄇㄨˋ","心","",3]
+],f:[
+["「同舟共＿」","濟",["擠","劑","際"],3],
+["「未雨綢＿」","繆",["謬","穆","慕"],3],
+["「他一毛不拔」形容？","吝嗇小氣",["勇敢大方","動作很快","誠實可靠"],2],
+["「破釜沉舟」比喻？","下定決心不回頭",["粗心大意","半途而廢","見風轉舵"],3],
+["「勤儉」的反義詞？","奢侈",["節約","樸素","儉樸"],2],
+["「猶豫」的近義詞？","遲疑",["果斷","迅速","立刻"],2]
+]};
+CH["5x"]={w:[
+["寂","ㄐㄧˊ","宀","",3],["寞","ㄇㄛˋ","宀","",3],["曠","ㄎㄨㄤˋ","日","",3],["野","ㄧㄝˇ","里","",2],
+["遼","ㄌㄧㄠˊ","辵","",3],["闊","ㄎㄨㄛˋ","門","狹",3],["狹","ㄒㄧㄚˊ","犬","闊",3],["茂","ㄇㄠˋ","艸","",3],
+["密","ㄇㄧˋ","宀","疏",2],["疏","ㄕㄨ","疋","密",3],["凋","ㄉㄧㄠ","冫","",3],["零","ㄌㄧㄥˊ","雨","",2],
+["枯","ㄎㄨ","木","榮",3],["萎","ㄨㄟ","艸","",3],["甦","ㄙㄨ","生","",3],["醒","ㄒㄧㄥˇ","酉","睡",2],
+["沉","ㄔㄣˊ","水","浮",2],["浮","ㄈㄨˊ","水","沉",2],["湧","ㄩㄥˇ","水","",3],["澎","ㄆㄥ","水","",3],
+["湃","ㄆㄞˋ","水","",3],["翔","ㄒㄧㄤˊ","羽","",3],["棲","ㄑㄧ","木","",3],["息","ㄒㄧˊ","心","",2],
+["遷","ㄑㄧㄢ","辵","",3],["徙","ㄒㄧˇ","彳","",3],["覓","ㄇㄧˋ","見","",3],["禦","ㄩˋ","示","",3],
+["寒","ㄏㄢˊ","宀","暑",2],["暑","ㄕㄨˇ","日","寒",2],["巢","ㄔㄠˊ","巛","",3],["穴","ㄒㄩㄝˋ","穴","",3],
+["繁","ㄈㄢˊ","糸","",3],["殖","ㄓˊ","歹","",3]
+],f:[
+["「鳥兒遷＿到南方過冬」","徙",["習","喜","洗"],3],
+["「百花齊放」的「齊」意思是？","一起",["整齊","快速","美麗"],2],
+["「這裡人煙稀少」意思是？","很少人住",["人很多","煙很大","常常下雨"],2],
+["「波濤洶湧」形容？","浪很大",["很平靜","水很淺","天氣很冷"],2],
+["「遼闊」的反義詞？","狹窄",["寬廣","廣大","無邊"],2],
+["「甦醒」的近義詞？","清醒",["沉睡","昏迷","休息"],2]
+]};
+EN["5s"]={w:[
+["weather","天氣",2],["season","季節",2],["vacation","假期",3],["travel","旅行",3],["ticket","票",3],
+["airport","機場",3],["hotel","旅館",3],["beach","海灘",2],["mountain","山",2],["river","河流",2],
+["lake","湖",2],["forest","森林",3],["island","島",3],["ocean","海洋",3],["camp","露營",3],
+["picture","照片",2],["camera","相機",3],["postcard","明信片",3],["gift","禮物",2],["visit","拜訪",3],
+["arrive","到達",3],["leave","離開",3],["stay","停留",3],["enjoy","享受",3],["plan","計畫",3],
+["yesterday","昨天",2],["tomorrow","明天",2],["weekend","週末",2],["was","是（過去式）",3],["were","是（過去式複數）",3],
+["went","去（過去式）",3],["saw","看見（過去式）",3],["ate","吃（過去式）",3],["had","有（過去式）",3],["did","做（過去式）",3],
+["fun","樂趣",2],["exciting","刺激的",3],["beautiful","美麗的",2],["famous","有名的",3],["delicious","美味的",3]
+],s:[
+["I ___ to Taipei yesterday.（去）","went",["go","goes","going"],3],
+["We ___ a good time last weekend.","had",["have","has","having"],3],
+["She ___ a big fish in the lake.（看見）","saw",["see","sees","seen"],3],
+["The food ___ delicious.（過去式）","was",["is","are","were"],3],
+["___ did you go? — To the beach.","Where",["What","Who","When"],2],
+["The view is very ___.（美麗）","beautiful",["beauty","beautifully","beautify"],3]
+]};
+EN["5x"]={w:[
+["future","未來",3],["dream","夢想",2],["job","工作",2],["singer","歌手",2],["dancer","舞者",2],
+["writer","作家",3],["painter","畫家",3],["scientist","科學家",3],["engineer","工程師",3],["pilot","飛行員",3],
+["reporter","記者",3],["lawyer","律師",3],["will","將會",3],["become","成為",3],["hope","希望",2],
+["wish","願望",3],["try","嘗試",2],["practice","練習",3],["improve","進步",3],["healthy","健康的",3],
+["exercise","運動鍛鍊",3],["habit","習慣",3],["diet","飲食",3],["vegetable","蔬菜",3],["meat","肉",2],
+["fast food","速食",2],["snack","點心",2],["salad","沙拉",3],["seldom","很少",3],["should","應該",3],
+["must","必須",3],["may","也許",3],["together","一起",2],["alone","獨自",3],["important","重要的",3],
+["different","不同的",3],["same","相同的",2],["easy","容易的",2],["difficult","困難的",3],["goal","目標",3]
+],s:[
+["I ___ be a doctor in the future.","will",["was","am","did"],3],
+["You ___ eat more vegetables.（應該）","should",["shoulder","shall not","would like"],3],
+["He wants to ___ a pilot.","become",["became","becomes","becoming"],3],
+["Eating too much fast food is not ___.","healthy",["health","healthily","heal"],3],
+["Math is ___ for me, but I keep trying.","difficult",["different","difficulty","differ"],3],
+["We do our homework ___.（一起）","together",["alone","apart","away"],2]
+]};
+CH["6s"]={w:[
+["瞻","ㄓㄢ","目","",3],["仰","ㄧㄤˇ","人","俯",3],["俯","ㄈㄨˇ","人","仰",3],["凝","ㄋㄧㄥˊ","冫","",3],
+["眺","ㄊㄧㄠˋ","目","",3],["矗","ㄔㄨˋ","目","",3],["巍","ㄨㄟˊ","山","",3],["峨","ㄜˊ","山","",3],
+["蜿","ㄨㄢ","虫","",3],["蜒","ㄧㄢˊ","虫","",3],["崎","ㄑㄧˊ","山","",3],["嶇","ㄑㄩ","山","",3],
+["陡","ㄉㄡˇ","阜","",3],["峭","ㄑㄧㄠˋ","山","",3],["懸","ㄒㄩㄢˊ","心","",3],["崖","ㄧㄞˊ","山","",3],
+["攀","ㄆㄢ","手","",3],["攜","ㄒㄧ","手","",3],["邁","ㄇㄞˋ","辵","",3],["躍","ㄩㄝˋ","足","",3],
+["馳","ㄔˊ","馬","",3],["騁","ㄔㄥˇ","馬","",3],["澈","ㄔㄜˋ","水","濁",3],["濁","ㄓㄨㄛˊ","水","澈",3],
+["湛","ㄓㄢˋ","水","",3],["皎","ㄐㄧㄠˇ","白","",3],["潔","ㄐㄧㄝˊ","水","",2],["璀","ㄘㄨㄟˇ","玉","",3],
+["璨","ㄘㄢˋ","玉","",3],["浩","ㄏㄠˋ","水","",3],["瀚","ㄏㄢˋ","水","",3],["磅","ㄆㄤˊ","石","",3],
+["礴","ㄅㄛˊ","石","",3],["壯","ㄓㄨㄤˋ","士","",2]
+],f:[
+["「高瞻遠＿」","矚",["屬","囑","燭"],3],
+["「鞠躬盡＿」","瘁",["粹","萃","悴"],3],
+["「相形見＿」","絀",["拙","黜","屈"],3],
+["「他做事總是虎頭蛇尾」意思是？","有始無終",["非常勇猛","小心謹慎","快速完成"],2],
+["文章的「主旨」是指？","中心思想",["第一段","優美詞句","標點符號"],2],
+["「明日黃花」比喻？","過時的事物",["美麗的花","明天的計畫","珍貴的東西"],3]
+]};
+CH["6x"]={w:[
+["遺","ㄧˊ","辵","",3],["憾","ㄏㄢˋ","心","",3],["惋","ㄨㄢˇ","心","",3],["惜","ㄒㄧˊ","心","",2],
+["眷","ㄐㄩㄢˋ","目","",3],["戀","ㄌㄧㄢˋ","心","",3],["惆","ㄔㄡˊ","心","",3],["悵","ㄔㄤˋ","心","",3],
+["憧","ㄔㄨㄥ","心","",3],["憬","ㄐㄧㄥˇ","心","",3],["薰","ㄒㄩㄣ","艸","",3],["陶","ㄊㄠˊ","阜","",3],
+["豁","ㄏㄨㄛˋ","谷","",3],["達","ㄉㄚˊ","辵","",2],["澄","ㄔㄥˊ","水","",3],["慫","ㄙㄨㄥˇ","心","",3],
+["恿","ㄩㄥˇ","心","",3],["躊","ㄔㄡˊ","足","",3],["躇","ㄔㄨˊ","足","",3],["翱","ㄠˊ","羽","",3],
+["邂","ㄒㄧㄝˋ","辵","",3],["逅","ㄏㄡˋ","辵","",3],["崇","ㄔㄨㄥˊ","山","",3],["斟","ㄓㄣ","斗","",3],
+["酌","ㄓㄨㄛˊ","酉","",3],["倘","ㄊㄤˇ","人","",3],["若","ㄖㄨㄛˋ","艸","",2],["拓","ㄊㄨㄛˋ","手","",3],
+["墾","ㄎㄣˇ","土","",3],["畢","ㄅㄧˋ","田","",2],["業","ㄧㄝˋ","木","",2],["典","ㄉㄧㄢˇ","八","",2],
+["禮","ㄌㄧˇ","示","",2],["念","ㄋㄧㄢˋ","心","",2]
+],f:[
+["「畢業在＿，同學們依依不捨。」","即",["及","急","集"],2],
+["「不亦樂乎」的「樂」讀？","ㄌㄜˋ",["ㄩㄝˋ","ㄧㄠˋ","ㄌㄠˋ"],3],
+["「學而不思則＿」","罔",["惘","網","枉"],3],
+["「他躊躇滿志」形容？","得意自信",["猶豫不決","傷心難過","疲累不堪"],3],
+["「珍惜」的近義詞？","愛惜",["浪費","拋棄","忽視"],1],
+["「倘若」的意思接近？","如果",["已經","忽然","經常"],2]
+]};
+EN["6s"]={w:[
+["environment","環境",3],["earth","地球",2],["pollution","汙染",3],["recycle","回收",3],["reduce","減少",3],
+["reuse","再利用",3],["energy","能源",3],["save","節省",2],["waste","浪費",3],["trash","垃圾",2],
+["plastic","塑膠",3],["bottle","瓶子",2],["paper","紙",2],["glass","玻璃",3],["metal","金屬",3],
+["plant","種植",3],["tree","樹",1],["flower","花",1],["grass","草",2],["nature","大自然",3],
+["animal","動物",2],["insect","昆蟲",3],["whale","鯨魚",3],["dolphin","海豚",3],["panda","貓熊",2],
+["protect","保護",3],["danger","危險",3],["safe","安全的",2],["dirty","髒的",2],["air","空氣",2],
+["land","陸地",3],["sea","海",2],["sky","天空",2],["wind","風",2],["solar","太陽能的",3],
+["turn off","關掉",3],["light","燈",2],["bring","攜帶",3],["own","自己的",3],["reusable","可重複使用的",3]
+],s:[
+["We should ___ paper and bottles.","recycle",["throw","burn","buy"],3],
+["Please ___ the light when you leave.","turn off",["turn on","put on","take off"],3],
+["Don't ___ water.","waste",["waist","wash","watch"],3],
+["The earth is our ___.","home",["hole","ham","hope"],2],
+["Bring your ___ bag when shopping.","own",["owe","one","won"],3],
+["___ the animals in danger!","Protect",["Product","Project","Perfect"],3]
+]};
+EN["6x"]={w:[
+["graduate","畢業",3],["memory","回憶",3],["junior high","國中",3],["elementary","國小的",3],["ceremony","典禮",3],
+["speech","演講",3],["stage","舞台",3],["prize","獎品",3],["proud","驕傲的",3],["miss","想念",2],
+["forever","永遠",3],["forget","忘記",3],["remember","記得",3],["promise","承諾",3],["keep in touch","保持聯絡",3],
+["grow up","長大",3],["change","改變",3],["chance","機會",3],["choose","選擇",3],["decide","決定",3],
+["believe","相信",3],["yourself","你自己",3],["brave","勇敢的",2],["kind","善良的",2],["honest","誠實的",3],
+["polite","有禮貌的",3],["smart","聰明的",2],["hardworking","努力的",3],["team","團隊",2],["leader","領導者",3],
+["member","成員",3],["share","分享",2],["care","關心",2],["cheer","加油歡呼",3],["congratulations","恭喜",3],
+["invitation","邀請",3],["party","派對",2],["photo","照片",2],["letter","信",2],["wish","祝福",2]
+],s:[
+["___! You did a great job!","Congratulations",["Constitution","Conversation","Construction"],3],
+["I will never ___ my classmates.","forget",["forgive","forward","form"],3],
+["Please ___ in touch with me.","keep",["kept","keeping","keeps"],3],
+["He was ___ to win first prize.","proud",["pound","proof","prove"],3],
+["___ yourself, and you can do it!","Believe",["Belong","Below","Beside"],3],
+["We took a ___ together on the last day.","photo",["phone","piano","photograph machine"],2]
+]};
+
+/* ================= 數學生成器（依年級學期＋難度層） =================
+   每個 gs 回傳 [lv1生成, lv2生成, lv3生成] ================= */
 function mathChoices(a){
   const s=String(a); const set=new Set([s]);
-  if(/^\d+$/.test(s)){ const v=Number(s); let g=0; while(set.size<4&&g++<60){ const off=rnd(1,9)*(Math.random()<.5?1:-1); const c=v+off; if(c>=0) set.add(String(c)); } }
-  else if(s.includes("餘")){ const p=s.split("餘").map(Number); [`${p[0]+1}餘${p[1]}`,`${p[0]}餘${p[1]+1}`,`${Math.max(0,p[0]-1)}餘${p[1]}`].forEach(x=>set.add(x)); }
-  else if(s.includes("/")){ const p=s.split("/").map(Number); [`${p[0]+1}/${p[1]}`,`${Math.max(1,p[0]-1)}/${p[1]}`,`${p[0]+p[1]}/${p[1]}`].forEach(x=>set.add(x)); }
+  if(/^-?\d+$/.test(s)){ const v=Number(s); let g=0; while(set.size<4&&g++<80){ const off=rnd(1,Math.max(3,Math.round(Math.abs(v)*0.15)+3))*(Math.random()<.5?1:-1); const c=v+off; if(c>=0||v<0) set.add(String(c)); } }
+  else if(s.includes("餘")){ const p=s.split("餘").map(Number); [`${p[0]+1}餘${p[1]}`,`${p[0]}餘${Math.max(0,p[1]-1)}`,`${Math.max(0,p[0]-1)}餘${p[1]+1}`].forEach(x=>set.add(x)); }
+  else if(s.includes("/")){ const p=s.split("/").map(Number); [`${p[0]+1}/${p[1]}`,`${Math.max(1,p[0]-1)}/${p[1]}`,`${p[0]}/${p[1]+1}`].forEach(x=>set.add(x)); }
+  else if(s.includes(".")){ const v=parseFloat(s); [ (v+0.1).toFixed(1), (v-0.1).toFixed(1), (v+1).toFixed(1) ].forEach(x=>set.add(String(x))); }
+  else if(s.includes(":")){ const p=s.split(":").map(Number); [`${p[0]+1}:${p[1]}`,`${p[0]}:${p[1]+1}`,`${p[1]}:${p[0]}`].forEach(x=>set.add(x)); }
   let k=0; while(set.size<4) set.add(s+" "+(++k));
   return shuffle(Array.from(set).slice(0,4));
 }
-function genMath(role){
-  let q,a;
-  if(role==="g1"){ const t=Math.random();
-    if(t<.22){ const x=rnd(1,12),y=rnd(1,12); q=`${x} + ${y} = ?`; a=x+y; }
-    else if(t<.42){ const x=rnd(10,20),y=rnd(1,9); q=`${x} − ${y} = ?`; a=x-y; }
-    else if(t<.58){ const x=rnd(11,49),y=rnd(11,49); q=`${x} + ${y} = ?`; a=x+y; }
-    else if(t<.72){ const x=rnd(21,99),y=rnd(1,20); q=`${x} − ${y} = ?`; a=x-y; }
-    else if(t<.83){ const x=rnd(2,9); q=`${x} + ${x} = ?（雙倍）`; a=x+x; }
-    else if(t<.93){ const x=rnd(2,8),y=rnd(2,8),z=rnd(1,5); q=`${x} + ${y} + ${z} = ?`; a=x+y+z; }
-    else { const x=rnd(2,5); q=`${x} × 2 = ?`; a=x*2; }
-  } else { const t=Math.random();
-    if(t<.18){ const x=rnd(12,99),y=rnd(2,9); q=`${x} × ${y} = ?`; a=x*y; }
-    else if(t<.33){ const y=rnd(3,9),z=rnd(4,12); q=`${y*z} ÷ ${y} = ?`; a=z; }
-    else if(t<.48){ const x=rnd(100,899),y=rnd(100,899); q=`${x} + ${y} = ?`; a=x+y; }
-    else if(t<.6){ const x=rnd(400,900),y=rnd(100,399); q=`${x} − ${y} = ?`; a=x-y; }
-    else if(t<.72){ const y=rnd(3,9),z=rnd(4,9),r=rnd(1,y-1); q=`${y*z+r} ÷ ${y} = ?（商餘幾）`; a=`${z}餘${r}`; }
-    else if(t<.83){ const x=rnd(11,29),y=rnd(11,29); q=`${x} × ${y} = ?`; a=x*y; }
-    else if(t<.93){ const d=rnd(5,9),n1=rnd(1,d-2),n2=rnd(1,d-n1-1); q=`${n1}/${d} + ${n2}/${d} = ?`; a=`${n1+n2}/${d}`; }
-    else { const x=rnd(2,6),y=rnd(2,6),z=rnd(2,6); q=`(${x} + ${y}) × ${z} = ?`; a=(x+y)*z; }
-  }
-  return { q, a:String(a), choices:mathChoices(a) };
-}
-const BANK = {
-  g1:{
-    chinese:[
-      Q("「媽」的注音是？","ㄇㄚ",["ㄇㄛ","ㄇㄞ","ㄇㄟ"]),Q("「爸」的注音是？","ㄅㄚˋ",["ㄅㄛ","ㄅㄞ","ㄅㄟ"]),
-      Q("「魚」的注音是？","ㄩˊ",["ㄨˊ","ㄧˊ","ㄜˊ"]),Q("「貓」的注音是？","ㄇㄠ",["ㄇㄡ","ㄇㄤ","ㄇㄢ"]),
-      Q("「狗」的注音是？","ㄍㄡˇ",["ㄍㄠ","ㄎㄡ","ㄍㄨ"]),Q("「水」的注音是？","ㄕㄨㄟˇ",["ㄕㄟ","ㄙㄨㄟ","ㄕㄨㄞ"]),
-      Q("「火」的注音是？","ㄏㄨㄛˇ",["ㄏㄨ","ㄏㄛ","ㄍㄨㄛ"]),Q("「山」的注音是？","ㄕㄢ",["ㄙㄢ","ㄕㄤ","ㄔㄢ"]),
-      Q("「天」的注音是？","ㄊㄧㄢ",["ㄉㄧㄢ","ㄊㄢ","ㄊㄧㄤ"]),Q("「三」的注音是？","ㄙㄢ",["ㄕㄢ","ㄗㄢ","ㄘㄢ"]),
-      Q("ㄒㄧㄠˇ 是哪個字？","小",["大","少","水"]),Q("ㄉㄚˋ 是哪個字？","大",["太","天","犬"]),
-      Q("「花」的部首是？","艸(艹)",["木","口","日"]),Q("「打」的部首是？","手(扌)",["丁","口","人"]),
-      Q("「江」的部首是？","水(氵)",["工","土","木"]),Q("「明」的部首是？","日",["月","目","冏"]),
-      Q("「休」的部首是？","人(亻)",["木","日","口"]),Q("「星」的部首是？","日",["生","土","王"]),
-      Q("「樹」的部首是？","木",["對","寸","土"]),Q("「大」的相反是？","小",["多","高","長"]),
-      Q("「上」的相反是？","下",["左","右","中"]),Q("「開」的相反是？","關",["門","窗","鎖"]),
-      Q("「多」的相反是？","少",["大","高","快"]),Q("「前」的相反是？","後",["左","右","上"]),
-      Q("「火」可以組成？","火車",["水車","土車","風車"]),Q("「水」可以組成？","水果",["火果","土果","金果"]),
-      Q("「花」可以組成？","花朵",["花牙","花石","花鐵"]),Q("「日」的意思接近？","太陽",["月亮","星星","雲"]),
-      Q("「明」由哪兩字組成？","日月",["目月","日目","日日"]),Q("「林」有幾個木？","2",["1","3","4"]),
-      Q("「森」有幾個木？","3",["2","4","5"]),Q("「朋」由幾個月？","2",["1","3","4"]),
-      Q("一＿＿貓？","隻",["本","台","朵"]),Q("一＿＿書？","本",["隻","朵","條"]),
-      Q("一＿＿花？","朵",["隻","本","台"]),Q("一＿＿車？","台",["隻","本","朵"]),
-      Q("哪句最完整？","小鳥在唱歌。",["小鳥。","在唱歌","鳥鳥"]),Q("「我＿＿蘋果」填？","吃",["飛","跑","睡"]),
-      Q("句子結尾要加？","句號。",["逗號，","頓號、","冒號："]),Q("「兔」和哪個字最像？","免",["兒","克","見"])
-    ],
-    english:[
-      Q("大寫 B 的小寫是？","b",["d","p","q"]),Q("大寫 R 的小寫是？","r",["n","m","p"]),
-      Q("大寫 G 的小寫是？","g",["q","j","y"]),Q("小寫 m 的大寫是？","M",["N","W","H"]),
-      Q("apple 的開頭字母？","a",["e","o","i"]),Q("sun 的開頭字母？","s",["c","z","x"]),
-      Q("dog 的開頭字母？","d",["b","p","t"]),Q("red 的中文是？","紅色",["藍色","綠色","黑色"]),
-      Q("blue 的中文是？","藍色",["綠色","紅色","黃色"]),Q("green 的中文是？","綠色",["藍色","黃色","紫色"]),
-      Q("yellow 的中文是？","黃色",["紅色","黑色","白色"]),Q("紅色的英文是？","red",["blue","green","black"]),
-      Q("藍色的英文是？","blue",["red","green","pink"]),Q("綠色的英文是？","green",["gray","gold","blue"]),
-      Q("one 是幾？","1",["2","3","4"]),Q("3 的英文是？","three",["tree","free","third"]),
-      Q("five 是幾？","5",["4","6","9"]),Q("ten 是幾？","10",["2","12","1"]),
-      Q("7 的英文是？","seven",["sever","seventy","eleven"]),Q("8 的英文是？","eight",["eighty","eit","night"]),
-      Q("2 的英文是？","two",["too","to","tow"]),Q("cat 的中文是？","貓",["狗","魚","鳥"]),
-      Q("dog 的中文是？","狗",["貓","豬","牛"]),Q("fish 的中文是？","魚",["雞","馬","羊"]),
-      Q("bird 的中文是？","鳥",["魚","貓","狗"]),Q("apple 的中文是？","蘋果",["香蕉","橘子","蛋"]),
-      Q("蘋果的英文是？","apple",["banana","orange","egg"]),Q("香蕉的英文是？","banana",["apple","grape","melon"]),
-      Q("Hello 的意思是？","你好",["再見","謝謝","對不起"]),Q("Thank you 的意思是？","謝謝",["你好","再見","晚安"]),
-      Q("Bye 的意思是？","再見",["你好","謝謝","早安"]),Q("father 的中文是？","爸爸",["媽媽","哥哥","姊姊"]),
-      Q("mother 的中文是？","媽媽",["爸爸","弟弟","妹妹"]),Q("hand 的中文是？","手",["腳","頭","眼"]),
-      Q("head 的中文是？","頭",["手","腳","耳"]),Q("eye 的中文是？","眼睛",["鼻子","嘴巴","耳朵"]),
-      Q("「我喜歡狗」是？","I like dogs.",["I dog like.","Like I dogs.","Dogs I like."]),
-      Q("It is a ___.（貓）填？","cat",["cats","a cat is","the"]),Q("six 是幾？","6",["4","5","9"]),
-      Q("blue 是什麼顏色？","藍色",["綠色","紅色","黃色"])
-    ]
-  },
-  g3:{
-    chinese:[
-      Q("「銀行」的「行」讀？","ㄏㄤˊ",["ㄒㄧㄥˊ","ㄏㄥˊ","ㄒㄧㄤˊ"]),Q("「快樂」的「樂」讀？","ㄌㄜˋ",["ㄩㄝˋ","ㄧㄠˋ","ㄌㄠˊ"]),
-      Q("「音樂」的「樂」讀？","ㄩㄝˋ",["ㄌㄜˋ","ㄧㄠˋ","ㄌㄠˊ"]),Q("「長大」的「長」讀？","ㄓㄤˇ",["ㄔㄤˊ","ㄓㄤˋ","ㄔㄤˇ"]),
-      Q("「長短」的「長」讀？","ㄔㄤˊ",["ㄓㄤˇ","ㄓㄤˋ","ㄔㄤˇ"]),Q("「美麗」的近義詞？","漂亮",["醜陋","普通","巨大"]),
-      Q("「高興」的近義詞？","快樂",["難過","生氣","害怕"]),Q("「聰明」的近義詞？","伶俐",["愚笨","粗心","懶惰"]),
-      Q("「安全」的反義詞？","危險",["平安","舒服","乾淨"]),Q("「快速」的反義詞？","緩慢",["迅速","立刻","飛快"]),
-      Q("「勝利」的反義詞？","失敗",["成功","贏得","厲害"]),Q("「聰明」的反義詞？","愚笨",["機靈","伶俐","靈巧"]),
-      Q("「一舉＿得」填？","兩",["三","四","五"]),Q("「七上八＿」填？","下",["九","十","中"]),
-      Q("「三心二＿」填？","意",["心","念","想"]),Q("「九牛一＿」填？","毛",["角","尾","腳"]),
-      Q("「五顏六＿」填？","色",["彩","光","樣"]),Q("「千變萬＿」填？","化",["樣","種","象"]),
-      Q("「一心一＿」填？","意",["心","念","情"]),Q("「畫蛇添足」意思接近？","多此一舉",["非常勇敢","很有創意","動作很快"]),
-      Q("「井底之蛙」形容？","見識淺短",["很勇敢","很聰明","很努力"]),Q("「亡羊補牢」意思？","出事後及時補救",["不勞而獲","一次成功","白費力氣"]),
-      Q("「守株待兔」比喻？","死守經驗不知變通",["隨機應變","勤勞工作","團結合作"]),Q("「對牛彈琴」形容？","白費口舌",["很有音樂天分","很勤勞","很生氣"]),
-      Q("「熟能生巧」意思？","多練習就會熟練",["天生厲害","運氣好","不用學"]),Q("「舉一反三」形容？","善於類推",["很固執","很懶惰","記性差"]),
-      Q("「明察秋毫」形容？","觀察仔細",["眼睛不好","很粗心","看很遠"]),Q("「日」查字典的部首？","日",["目","白","田"]),
-      Q("「想」的部首是？","心",["木","目","日"]),Q("「跑」的部首是？","足(⻊)",["手","口","包"]),
-      Q("「飯」的部首是？","食(飠)",["反","人","口"]),Q("「炎」有幾個火？","2",["1","3","4"]),
-      Q("形近字：「日」與？","目",["月","白","田"]),Q("形近字：「土」與？","士",["王","工","干"]),
-      Q("「他跑得像風」用了？","譬喻",["擬人","誇飾","問句"]),Q("「花兒微笑」用了？","擬人",["譬喻","誇飾","數字"]),
-      Q("「白髮三千丈」用了？","誇飾",["擬人","譬喻","問句"]),Q("找段落大意要看？","整段的重點",["第一個字","最長的句子","標點符號"]),
-      Q("「因為下雨，＿＿沒出門」填？","所以",["但是","雖然","而且"]),Q("「雖然累，＿＿很開心」填？","但是",["所以","因為","於是"])
-    ],
-    english:[
-      Q("I ___ a student.","am",["is","are","be"]),Q("She ___ happy.","is",["am","are","do"]),
-      Q("They ___ friends.","are",["is","am","was"]),Q("He ___ tall.","is",["am","are","be"]),
-      Q("We ___ students.","are",["is","am","was"]),Q("問『這是什麼』？","What is this?",["Who are you?","How old?","Where is it?"]),
-      Q("問『在哪裡』用？","Where",["Who","When","What"]),Q("問『誰』用？","Who",["Where","Why","How"]),
-      Q("問『什麼時候』用？","When",["Where","Who","Which"]),Q("問『為什麼』用？","Why",["What","Who","Where"]),
-      Q("It is ___ apple. 填？","an",["a","the","two"]),Q("It is ___ dog. 填？","a",["an","the","two"]),
-      Q("run 加 ing 是？","running",["runing","runnning","runs"]),Q("swim 加 ing 是？","swimming",["swiming","swimm","swims"]),
-      Q("play 加 ing 是？","playing",["plaing","plaies","plays"]),Q("「我正在讀書」？","I am reading.",["I read book.","I reading.","I am read."]),
-      Q("「她正在跑步」？","She is running.",["She run.","She running.","She is run."]),Q("cat 由幾個音組成？","3",["2","4","1"]),
-      Q("dog 的第一個音是？","/d/",["/g/","/o/","/t/"]),Q("兩本書 是？","two books",["two book","two bookes","twos book"]),
-      Q("三隻貓 是？","three cats",["three cat","three cates","threes cat"]),Q("water 的中文是？","水",["火","風","土"]),
-      Q("happy 的反義是？","sad",["big","fast","new"]),Q("big 的反義是？","small",["tall","long","old"]),
-      Q("hot 的反義是？","cold",["warm","cool","dry"]),Q("day 的反義是？","night",["noon","week","year"]),
-      Q("book 的中文是？","書",["筆","桌","椅"]),Q("pen 的中文是？","筆",["書","尺","包"]),
-      Q("school 的中文是？","學校",["醫院","公園","商店"]),Q("teacher 的中文是？","老師",["學生","醫生","司機"]),
-      Q("friend 的中文是？","朋友",["敵人","老師","醫生"]),Q("Monday 是星期幾？","星期一",["星期二","星期日","星期三"]),
-      Q("Sunday 是星期幾？","星期日",["星期一","星期六","星期五"]),Q("red 的中文是？","紅色",["藍色","綠色","黑色"]),
-      Q("「你好嗎」？","How are you?",["What is this?","Who are you?","Where are you?"]),
-      Q("回答 How are you? 用？","I'm fine.",["Yes, I do.","It is a cat.","He is tall."]),
-      Q("mother 的中文是？","媽媽",["爸爸","阿姨","奶奶"]),Q("six 是幾？","6",["4","5","9"]),
-      Q("eight 是幾？","8",["6","5","9"]),Q("問『幾點』時常用？","o'clock",["apple","school","happy"])
-    ]
-  }
+function gcd(a,b){ return b?gcd(b,a%b):a; }
+const MATH = {
+"1s":[
+ ()=>{ const x=rnd(1,9),y=rnd(1,10-x); return {q:`${x} + ${y} = ?`,a:x+y}; },
+ ()=>{ const x=rnd(3,10),y=rnd(1,x); return {q:`${x} − ${y} = ?`,a:x-y}; },
+ ()=>{ const x=rnd(11,18),y=rnd(1,19-x); return {q:`${x} + ${y} = ?`,a:x+y}; }
+],
+"1x":[
+ ()=>{ const x=rnd(5,9),y=rnd(11-x,9); return {q:`${x} + ${y} = ?`,a:x+y}; },
+ ()=>{ const x=rnd(11,18),y=rnd(x-9,9); return {q:`${x} − ${y} = ?`,a:x-y}; },
+ ()=>{ const x=rnd(2,4)*10+rnd(1,5),y=rnd(1,4)*10+rnd(1,4); return {q:`${x} + ${y} = ?`,a:x+y}; }
+],
+"2s":[
+ ()=>{ const x=rnd(15,89),y=rnd(6,Math.min(30,x-1)); return {q:`${x} − ${y} = ?`,a:x-y}; },
+ ()=>{ const y=rnd(1,9),m=pick([2,5,10]); return {q:`${m} × ${y} = ?`,a:m*y}; },
+ ()=>{ const y=rnd(2,9),m=pick([3,4]); return {q:`${m} × ${y} = ?`,a:m*y}; }
+],
+"2x":[
+ ()=>{ const x=rnd(2,9),y=rnd(2,9); return {q:`${x} × ${y} = ?`,a:x*y}; },
+ ()=>{ const y=rnd(2,9),z=rnd(2,9); return {q:`${y*z} ÷ ${y} = ?`,a:z}; },
+ ()=>{ const x=rnd(2,6),y=rnd(2,6),z=rnd(2,9); return {q:`${x} × ${y} + ${z} = ?`,a:x*y+z}; }
+],
+"3s":[
+ ()=>{ const x=rnd(120,880),y=rnd(100,900-x+80); return {q:`${x} + ${Math.min(y,999-x)} = ?`,a:x+Math.min(y,999-x)}; },
+ ()=>{ const x=rnd(12,98),y=rnd(3,9); return {q:`${x} × ${y} = ?`,a:x*y}; },
+ ()=>{ const y=rnd(3,9),z=rnd(4,12),r=rnd(1,y-1); return {q:`${y*z+r} ÷ ${y} = ? （商…餘…）`,a:`${z}餘${r}`}; }
+],
+"3x":[
+ ()=>{ const y=rnd(3,9),z=rnd(3,12),r=rnd(0,y-1); const s=r?`${z}餘${r}`:String(z); return {q:`${y*z+r} ÷ ${y} = ?${r?"（商…餘…）":""}`,a:s}; },
+ ()=>{ const d=rnd(5,9),n1=rnd(1,d-2),n2=rnd(1,d-n1-1); return {q:`${n1}/${d} + ${n2}/${d} = ?`,a:`${n1+n2}/${d}`}; },
+ ()=>{ const w=rnd(3,12),h=rnd(2,9); return {q:`長 ${w} 公分、寬 ${h} 公分的長方形，周長幾公分？`,a:(w+h)*2}; }
+],
+"4s":[
+ ()=>{ const x=rnd(2,9); return {q:`${x} 萬 ＝ 多少？`,a:x*10000}; },
+ ()=>{ const x=rnd(120,980),y=rnd(11,29); return {q:`${x} × ${y} = ?`,a:x*y}; },
+ ()=>{ const y=rnd(11,25),z=rnd(3,12); return {q:`${y*z} ÷ ${y} = ?`,a:z}; }
+],
+"4x":[
+ ()=>{ const d=rnd(5,12),n1=rnd(2,d-1),n2=rnd(1,n1-1); return {q:`${n1}/${d} − ${n2}/${d} = ?`,a:`${n1-n2}/${d}`}; },
+ ()=>{ const x=(rnd(10,89)/10),y=(rnd(10,89)/10); return {q:`${x.toFixed(1)} + ${y.toFixed(1)} = ?`,a:(x+y).toFixed(1)}; },
+ ()=>{ const w=rnd(4,15),h=rnd(3,12); return {q:`長 ${w} 公分、寬 ${h} 公分的長方形，面積幾平方公分？`,a:w*h}; }
+],
+"5s":[
+ ()=>{ const x=(rnd(11,99)/10),y=rnd(2,9); return {q:`${x.toFixed(1)} × ${y} = ?`,a:(x*y).toFixed(1).replace(/\.0$/,"")}; },
+ ()=>{ const x=pick([12,18,20,24,30,36]); const f=[]; for(let i=1;i<=x;i++) if(x%i===0) f.push(i); return {q:`${x} 的因數共有幾個？`,a:f.length}; },
+ ()=>{ const x=rnd(3,9),y=rnd(12,25),z=rnd(2,8); return {q:`${x} × ${y} − ${z*x} = ?`,a:x*y-z*x}; }
+],
+"5x":[
+ ()=>{ const a1=rnd(1,3),d1=pick([2,3,4]),d2=pick([5,7]); const n=a1*d2+1*d1, d=d1*d2; const g=gcd(n,d); return {q:`${a1}/${d1} + 1/${d2} = ?`,a:`${n/g}/${d/g}`}; },
+ ()=>{ const x=rnd(35,95)/10, y=rnd(11,Math.round(x*10)-1)/10; return {q:`${x.toFixed(1)} − ${y.toFixed(1)} = ?`,a:(x-y).toFixed(1)}; },
+ ()=>{ const l=rnd(2,8),w=rnd(2,6),h=rnd(2,5); return {q:`長 ${l}、寬 ${w}、高 ${h} 公分的長方體，體積幾立方公分？`,a:l*w*h}; }
+],
+"6s":[
+ ()=>{ const d1=pick([2,3,4,5]),n1=rnd(1,d1-1),m=rnd(2,4); const n=n1*m,d=d1; const g=gcd(n,d); return {q:`${n1}/${d1} × ${m} = ?`,a:(n/g)%(d/g)===0&&d/g===1?String(n/g):`${n/g}/${d/g}`}; },
+ ()=>{ const d=pick([2,3,4]),n=1,k=rnd(2,4); return {q:`${n}/${d} ÷ ${n}/${d*k} = ?`,a:k}; },
+ ()=>{ const a1=rnd(2,9)*2,b=rnd(2,9)*2; const g=gcd(a1,b); return {q:`${a1}:${b} 化成最簡整數比是？`,a:`${a1/g}:${b/g}`}; }
+],
+"6x":[
+ ()=>{ const n=pick([40,60,80,120,200]); const p=pick([25,50,75]); return {q:`${n} 的 ${p}% 是多少？`,a:n*p/100}; },
+ ()=>{ const r=rnd(2,10); return {q:`半徑 ${r} 公分的圓，面積是多少平方公分？（圓周率用 3.14）`,a:(3.14*r*r).toFixed(2).replace(/\.?0+$/,"")}; },
+ ()=>{ const t=rnd(2,5),v=rnd(20,80); return {q:`每小時走 ${v} 公里，走 ${t} 小時共走幾公里？`,a:v*t}; }
+]
 };
-let curQ=null;
-/* ---------- 錯題重練：答錯的題目會在接下來 2~5 題內再次出現（同科目、標 🔁） ---------- */
-let qCount=0, retryQueue=[];
+
+/* ================= 出題引擎（科目×年級學期×難度偏向） ================= */
+let curQ=null, qCount=0, retryQueue=[];
 function scheduleRetry(q,subject){
   const clean=q.q.replace(/^🔁 /,"");
-  if(retryQueue.some(r=>r.q.q===clean)) return;          // 同一題不重複排隊
+  if(retryQueue.some(r=>r.q.q===clean)) return;
   retryQueue.push({ q:{q:clean,a:q.a,choices:q.choices}, subject, dueAt:qCount+rnd(2,5) });
-  if(retryQueue.length>10) retryQueue.shift();           // 佇列上限，避免無限累積
+  if(retryQueue.length>10) retryQueue.shift();
 }
-function nextQ(subject){
-  qCount++;
-  const idx=retryQueue.findIndex(r=>r.subject===subject && qCount>=r.dueAt);
-  if(idx>=0){ const r=retryQueue.splice(idx,1)[0]; return { q:"🔁 "+r.q.q, a:r.q.a, choices:shuffle(r.q.choices) }; }
-  if(subject==="math") return genMath(role); const arr=BANK[role][subject]; return arr[rnd(0,arr.length-1)];
+// bias: "hard"(複習) / "easy"(預習) / "any"(自由)
+function lvPick(arr, lvIdx, bias){
+  let pool;
+  if(bias==="hard") pool=arr.filter(x=>x[lvIdx]>=2);
+  else if(bias==="easy") pool=arr.filter(x=>x[lvIdx]<=2);
+  else pool=arr;
+  if(!pool.length) pool=arr;
+  return pick(pool);
+}
+function distinctFrom(arr, idx, ans, n){
+  const set=new Set(); let guard=0;
+  while(set.size<n && guard++<120){ const v=pick(arr)[idx]; if(v && v!==ans) set.add(v); }
+  return Array.from(set);
+}
+function chQ(gs,bias){
+  const T=CH[gs]||CH["1s"];
+  const roll=Math.random();
+  if(roll<0.18 && T.f.length){ const f=lvPick(T.f,3,bias); return {q:f[0],a:f[1],choices:shuffle([f[1],...f[2]])}; }
+  const withRad=T.w.filter(x=>x[2]), withAnti=T.w.filter(x=>x[3]);
+  if(roll<0.36 && withAnti.length>=4){ const e=lvPick(withAnti,4,bias); return {q:`「${e[0]}」的相反是？`,a:e[3],choices:shuffle([e[3],...distinctFrom(withAnti,3,e[3],3)])}; }
+  if(roll<0.55 && withRad.length>=4){ const e=lvPick(withRad,4,bias); return {q:`「${e[0]}」的部首是？`,a:e[2],choices:shuffle([e[2],...distinctFrom(withRad,2,e[2],3)])}; }
+  if(roll<0.78){ const e=lvPick(T.w,4,bias); return {q:`「${e[0]}」的注音是？`,a:e[1],choices:shuffle([e[1],...distinctFrom(T.w,1,e[1],3)])}; }
+  const e=lvPick(T.w,4,bias); return {q:`${e[1]} 是哪個字？`,a:e[0],choices:shuffle([e[0],...distinctFrom(T.w,0,e[0],3)])};
+}
+function enQ(gs,bias){
+  const T=EN[gs]||EN["1s"];
+  const roll=Math.random();
+  if(roll<0.15 && T.s.length){ const s=lvPick(T.s,3,bias); return {q:s[0],a:s[1],choices:shuffle([s[1],...s[2]])}; }
+  if(roll<0.45){ const e=lvPick(T.w,2,bias); return {q:`${e[0]} 的中文是？`,a:e[1],choices:shuffle([e[1],...distinctFrom(T.w,1,e[1],3)])}; }
+  if(roll<0.75){ const e=lvPick(T.w,2,bias); return {q:`「${e[1]}」的英文是？`,a:e[0],choices:shuffle([e[0],...distinctFrom(T.w,0,e[0],3)])}; }
+  // 拼字缺字母
+  const cand=T.w.filter(x=>x[0].length>=3 && !x[0].includes(" "));
+  const e=lvPick(cand.length?cand:T.w,2,bias);
+  const w=e[0]; const i=rnd(1,w.length-2); const shown=w.slice(0,i)+"_"+w.slice(i+1);
+  const wrong=new Set(); let g=0;
+  while(wrong.size<3&&g++<40){ const c="abcdefghijklmnoprstuw"[rnd(0,20)]; if(c!==w[i]) wrong.add(c); }
+  return {q:`${shown}（${e[1]}）缺哪個字母？`,a:w[i],choices:shuffle([w[i],...Array.from(wrong)])};
+}
+function mathQ(gs,bias){
+  const gens=MATH[gs]||MATH["1s"];
+  let idx;
+  if(bias==="hard") idx=pick([1,2]); else if(bias==="easy") idx=pick([0,1]); else idx=rnd(0,2);
+  const r=gens[idx]();
+  return {q:r.q,a:String(r.a),choices:mathChoices(r.a)};
+}
+let curSubject="math";   // 目前出題科目（供錯題重練歸類）
+function nextQ(subject,gs,bias){
+  qCount++; curSubject=subject;
+  const i=retryQueue.findIndex(r=>r.subject===subject && qCount>=r.dueAt);
+  if(i>=0){ const r=retryQueue.splice(i,1)[0]; return {q:"🔁 "+r.q.q,a:r.q.a,choices:shuffle(r.q.choices)}; }
+  if(subject==="math") return mathQ(gs,bias);
+  if(subject==="chinese") return chQ(gs,bias);
+  return enQ(gs,bias);
 }
 
-/* ---------- 捕獸珠 ---------- */
-const BALLS = { wood:{n:"木靈珠",e:"🟢",rate:.5,price:5}, silver:{n:"銀星珠",e:"⚪",rate:.72,price:12}, star:{n:"星輝珠",e:"🌟",rate:.95,price:30} };
-
-/* ============================================================ 狀態 / 存檔 */
-let role=null, region=0;
-const KEY="monster_rpg_adventure";
+/* ================= 存檔 v3 ================= */
+let P=null; // 'a' or 'b'
+const KEY="monster_rpg_v3";
 function loadAll(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
 function saveAll(d){ localStorage.setItem(KEY, JSON.stringify(d)); }
-function rdata(r){
+function fresh(){ return { set:false, grade:1, season:"summer", trainerExp:0, coins:15, balls:{wood:5,silver:0,star:0}, party:[], maxLvl:{}, stars:{}, badges:[] }; }
+function rdata(p){
   const all=loadAll();
-  if(!all[r]) all[r]={ trainerExp:0, coins:15, balls:{wood:5,silver:0,star:0}, party:[], maxLvl:{}, unlocked:1, gymBeaten:[], starterPicked:false };
-  const d=all[r]; d.balls=d.balls||{wood:5,silver:0,star:0}; d.party=d.party||[]; d.maxLvl=d.maxLvl||{}; d.gymBeaten=d.gymBeaten||[];
-  if(typeof d.trainerExp!=="number") d.trainerExp=0; if(typeof d.coins!=="number") d.coins=15; if(typeof d.unlocked!=="number") d.unlocked=1;
+  if(!all[p]){ all[p]=fresh(); migrateOld(all,p); }
+  const d=all[p];
+  d.balls=d.balls||{wood:5,silver:0,star:0}; d.party=d.party||[]; d.maxLvl=d.maxLvl||{}; d.stars=d.stars||{}; d.badges=d.badges||[];
   return { all, d };
 }
-function trainerLvl(){ return Math.min(10, 1+Math.floor(rdata(role).d.trainerExp/8)); }
-function addTrainerExp(n){ const {all,d}=rdata(role); d.trainerExp+=n; saveAll(all); refreshHUD(); }
-function addCoins(n){ const {all,d}=rdata(role); d.coins=Math.max(0,d.coins+n); saveAll(all); refreshHUD(); return d.coins; }
-function getCoins(){ return rdata(role).d.coins; }
-function getBalls(){ return rdata(role).d.balls; }
-function addBall(t,n){ const {all,d}=rdata(role); d.balls[t]=(d.balls[t]||0)+n; saveAll(all); }
-function useBall(t){ const {all,d}=rdata(role); if((d.balls[t]||0)<=0) return false; d.balls[t]--; saveAll(all); return true; }
-function party(){ return rdata(role).d.party; }
-function addToParty(sid,lvl){ const {all,d}=rdata(role); d.party.push({sid,lvl,wins:0,uid:Date.now()+"_"+Math.floor(Math.random()*1e6)}); bumpMax(sid,lvl,d); saveAll(all); refreshHUD(); }
-function bumpMax(sid,lvl,d){ if(!d.maxLvl[sid]||d.maxLvl[sid]<lvl) d.maxLvl[sid]=lvl; }
-function saveParty(){ const {all,d}=rdata(role); d.party.forEach(m=>bumpMax(m.sid,m.lvl,d)); saveAll(all); }
-function dexCount(){ const m=rdata(role).d.maxLvl; return Object.values(m).reduce((a,b)=>a+b,0); }
-function unlockRegion(n){ const {all,d}=rdata(role); if(d.unlocked<n){ d.unlocked=n; saveAll(all); } }
-function markGym(k){ const {all,d}=rdata(role); if(!d.gymBeaten.includes(k)){ d.gymBeaten.push(k); saveAll(all); } }
-function gymBeaten(k){ return rdata(role).d.gymBeaten.includes(k); }
+function migrateOld(all,p){ // 從 v2 搬金幣/怪獸/圖鑑（單人版：舊檔哪個角色有資料就搬哪個）
+  try{ const old=JSON.parse(localStorage.getItem("monster_rpg_adventure")); if(!old) return;
+    const o=old.g1||old.g3; if(!o) return;
+    all[p].coins=o.coins||15; all[p].balls=o.balls||all[p].balls; all[p].party=o.party||[]; all[p].maxLvl=o.maxLvl||{}; all[p].trainerExp=o.trainerExp||0;
+  }catch(e){}
+}
+function trainerLvl(){ return Math.min(10, 1+Math.floor(rdata(P).d.trainerExp/10)); }
+function addExp(n){ const {all,d}=rdata(P); d.trainerExp+=n; saveAll(all); refreshHUD(); }
+function addCoins(n){ const {all,d}=rdata(P); d.coins=Math.max(0,d.coins+n); saveAll(all); refreshHUD(); }
+function getCoins(){ return rdata(P).d.coins; }
+function getBalls(){ return rdata(P).d.balls; }
+function addBall(t,n){ const {all,d}=rdata(P); d.balls[t]=(d.balls[t]||0)+n; saveAll(all); }
+function useBall(t){ const {all,d}=rdata(P); if((d.balls[t]||0)<=0) return false; d.balls[t]--; saveAll(all); return true; }
+function party(){ return rdata(P).d.party; }
+function addToParty(sid,lvl){ const {all,d}=rdata(P); d.party.push({sid,lvl,wins:0,uid:Date.now()+"_"+Math.floor(Math.random()*1e6)}); if(!d.maxLvl[sid]||d.maxLvl[sid]<lvl) d.maxLvl[sid]=lvl; saveAll(all); refreshHUD(); }
+function dexCount(){ return Object.values(rdata(P).d.maxLvl).reduce((a,b)=>a+b,0); }
+function getStars(w,i){ const s=rdata(P).d.stars; return (s[w]&&s[w][i])||0; }
+function setStars(w,i,n){ const {all,d}=rdata(P); if(!d.stars[w]) d.stars[w]={}; if((d.stars[w][i]||0)<n) d.stars[w][i]=n; saveAll(all); }
+function worldStarSum(w){ const s=rdata(P).d.stars[w]||{}; return Object.values(s).reduce((a,b)=>a+b,0); }
+function hasBadge(w){ return rdata(P).d.badges.includes(w); }
+function giveBadge(w){ const {all,d}=rdata(P); if(!d.badges.includes(w)){ d.badges.push(w); saveAll(all); } }
 function refreshHUD(){ const c=getCoins(),lv=trainerLvl();
-  [["coin-region",c],["coin-map",c],["tr-lvl",lv],["tr-lvl2",lv]].forEach(([id,v])=>{ const el=document.getElementById(id); if(el) el.textContent=v; }); }
+  [["coin-w",c],["coin-l",c],["tr-lvl",lv],["tr-lvl2",lv]].forEach(([id,v])=>{ const el=document.getElementById(id); if(el) el.textContent=v; }); }
 
-/* ---------- 音效 ---------- */
+/* ================= 音效 ================= */
 const SFX=(()=>{ let ac=null,on=true;
   function ctx(){ if(!ac){ try{ ac=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ on=false; } } return ac; }
   function t(f,st,d,ty,v){ if(!on)return; const c=ctx(); if(!c)return; const o=c.createOscillator(),g=c.createGain(); o.type=ty||"sine"; o.frequency.value=f; o.connect(g); g.connect(c.destination); const s=c.currentTime+st; g.gain.setValueAtTime(.0001,s); g.gain.exponentialRampToValueAtTime(v||.12,s+.01); g.gain.exponentialRampToValueAtTime(.0001,s+d); o.start(s); o.stop(s+d+.02); }
   return { resume(){ const c=ctx(); if(c&&c.state==="suspended") c.resume(); },
-    tap(){t(520,0,.07,"triangle",.07);}, dice(){[400,300,500,350].forEach((f,i)=>t(f,i*.05,.06,"square",.06));},
-    right(){t(660,0,.1,"triangle",.12);t(990,.07,.1,"triangle",.09);}, wrong(){t(170,0,.25,"sawtooth",.1);},
+    tap(){t(520,0,.07,"triangle",.07);}, right(){t(660,0,.1,"triangle",.12);t(990,.07,.1,"triangle",.09);}, wrong(){t(170,0,.25,"sawtooth",.1);},
     hit(){t(300,0,.08,"square",.09);}, crit(){t(520,0,.09,"square",.11);t(760,.05,.1,"square",.09);},
     coin(){t(880,0,.08,"square",.08);t(1180,.06,.1,"square",.06);}, catchok(){[523,659,880,1046].forEach((f,i)=>t(f,i*.08,.25,"triangle",.11));},
     levelup(){[523,659,784,1046,1318].forEach((f,i)=>t(f,i*.08,.3,"triangle",.12));}, win(){[523,659,784,1046,1318,1568].forEach((f,i)=>t(f,i*.1,.45,"triangle",.12));}, lose(){t(200,0,.4,"sawtooth",.1);} };
 })();
 
-/* ============================================================ 導覽 */
+/* ================= 導覽 ================= */
 function go(id){ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active")); document.getElementById(id).classList.add("active"); window.scrollTo(0,0); }
 function openModal(id){ document.getElementById(id).classList.add("show"); }
 function closeModal(id){ document.getElementById(id).classList.remove("show"); }
 const modalBox=()=>document.getElementById("modal-box");
 
-function chooseRole(r){ SFX.resume(); role=r;
-  document.body.classList.remove("theme-g1","theme-g3"); document.body.classList.add(r==="g1"?"theme-g1":"theme-g3");
-  document.getElementById("region-role").textContent=(r==="g1"?"🧚‍♂️ 文字精靈訓練家":"🧙‍♂️ 數理魔導訓練家");
-  renderRegions(); refreshHUD(); go("page-region");
+function seasonName(s){ return s==="summer"?"暑假":"寒假"; }
+function updateHomeBadges(){
+  const all=loadAll(); const d=all.a;
+  const el=document.getElementById("p-badge");
+  if(el) el.textContent = (d&&d.set) ? `${d.grade}年級 · ${seasonName(d.season)}` : "點我開始";
 }
-function renderRegions(){
-  const {d}=rdata(role); const list=document.getElementById("region-list"); list.innerHTML="";
-  REGIONS.forEach((rg,i)=>{ const done=gymBeaten(rg.key);   // 世界全部開放，不上鎖
-    const card=document.createElement("div"); card.className="menu-card";
-    card.innerHTML=`<div class="m-emoji">${rg.emoji}</div><div class="m-body" style="flex:1;"><div class="m-title">${rg.name} ${done?"🏅":""}</div><div class="m-sub">${rg.desc}</div></div><div style="font-size:22px;">▶</div>`;
-    card.onclick=()=>{ SFX.tap(); openRegion(i); };
-    list.appendChild(card); });
+function startGame(){
+  SFX.resume(); P="a";
+  document.body.classList.add("theme-a");
+  const {d}=rdata(P);
+  if(!d.set){ openSetup(true); return; }
+  enterWorlds();
 }
-
-/* ============================================================ 地圖 */
-const RING=[];
-(function(){ for(let c=1;c<=8;c++) RING.push([1,c]); for(let r=2;r<=8;r++) RING.push([r,8]); for(let c=7;c>=1;c--) RING.push([8,c]); for(let r=7;r>=2;r--) RING.push([r,1]); })();
-let tiles=[], pPos=0, rivalPos=15, busy=false;
-
-function openRegion(i){
-  region=i; const rg=REGIONS[i];
-  document.getElementById("map-title").textContent=`${rg.emoji} ${rg.name}`;
-  buildMap(); renderMap(); pPos=0; rivalPos=15; busy=false; refreshHUD(); go("page-map");   // busy 重置：避免道館打完回來骰子點不動
-  requestAnimationFrame(()=>{ placeToken("token",pPos,true); placeToken("token-rival",rivalPos,true); });
-  if(party().length===0 && !rdata(role).d.starterPicked) starterSelect();
-  else setMsg("擲骰子探索！🌳森林=陸系、🏞️湖泊=海系、⛰️高山=空系怪獸。");
-}
-const TERRAINS=["forest","lake","mount"];
-function buildMap(){
-  const n=RING.length; tiles=new Array(n);
-  let t=0;
-  for(let i=0;i<n;i++){ tiles[i]={type:TERRAINS[t%3]}; t++; }
-  tiles[0]={type:"start"}; tiles[7]={type:"shop"}; tiles[14]={type:"gym"}; tiles[21]={type:"shop"};
-}
-const TM={ start:{ic:"🏠",lbl:"出發"}, shop:{ic:"🛒",lbl:"商店"}, gym:{ic:"🏛️",lbl:"道館"},
-  forest:{ic:"🌳",lbl:"森林"}, lake:{ic:"🏞️",lbl:"湖泊"}, mount:{ic:"⛰️",lbl:"高山"} };
-function renderMap(){
-  const board=document.getElementById("board"); board.innerHTML="";
-  tiles.forEach((t,i)=>{ const [r,c]=RING[i]; const div=document.createElement("div");
-    div.className="tile "+t.type; div.style.gridRow=r; div.style.gridColumn=c; div.dataset.index=i;
-    div.innerHTML=`<div class="t-ic">${TM[t.type].ic}</div><div class="t-lbl">${TM[t.type].lbl}</div>`; board.appendChild(div); });
-  const center=document.createElement("div"); center.className="center-panel";
-  center.innerHTML=`<div class="cp-title">🎲 ${REGIONS[region].name}</div><div class="dice" id="dice">🎲</div><button class="btn" id="roll-btn" style="padding:10px 22px;">擲骰子</button><div class="cp-msg" id="cp-msg"></div>`;
-  board.appendChild(center); document.getElementById("roll-btn").onclick=rollDice;
-  const tk=document.createElement("div"); tk.className="token"; tk.id="token"; tk.textContent=(role==="g1"?"🧚":"🧙"); board.appendChild(tk);
-  const rv=document.createElement("div"); rv.className="token rival"; rv.id="token-rival"; rv.textContent=REGIONS[region].rival; board.appendChild(rv);
-}
-function setMsg(m){ const el=document.getElementById("cp-msg"); if(el) el.textContent=m; }
-function placeToken(tid,i,instant){
-  const board=document.getElementById("board"); const tile=board.querySelector(`.tile[data-index="${i}"]`); const tk=document.getElementById(tid);
-  if(!tile||!tk) return; if(instant) tk.style.transition="none"; else tk.style.transition="";
-  const dx=(tid==="token-rival")?10:-10;
-  tk.style.left=(tile.offsetLeft+tile.offsetWidth/2+dx)+"px"; tk.style.top=(tile.offsetTop+tile.offsetHeight/2)+"px";
-  if(instant) requestAnimationFrame(()=>{ tk.style.transition=""; });
-  if(tid==="token"){ board.querySelectorAll(".tile.cur").forEach(el=>el.classList.remove("cur")); tile.classList.add("cur"); }
-}
-function rollDice(){
-  if(busy) return; if(party().length===0){ setMsg("先選一隻初始夥伴！"); starterSelect(); return; }
-  busy=true; SFX.dice(); const dice=document.getElementById("dice"); dice.classList.add("rolling");
-  const val=1+Math.floor(Math.random()*6); const faces=["⚀","⚁","⚂","⚃","⚄","⚅"]; let f=0;
-  const sp=setInterval(()=>{ dice.textContent=faces[Math.floor(Math.random()*6)]; if(++f>7){ clearInterval(sp); dice.textContent=faces[val-1]; dice.classList.remove("rolling"); movePlayer(val); } },70);
-}
-function movePlayer(steps){
-  setMsg(`前進 ${steps} 格！`); let left=steps, lap=false;
-  const iv=setInterval(()=>{ pPos=(pPos+1)%RING.length; placeToken("token",pPos); SFX.tap();
-    if(pPos===0){ addCoins(3); addBall("wood",1); lap=true; SFX.coin(); }
-    if(--left<=0){ clearInterval(iv); const after=()=>{ if(pPos===rivalPos) startBattle("rival"); else resolveTile(pPos); };
-      if(lap){ setMsg("🎉 繞完一圈！獲得 🟢木靈珠 ×1（＋3🪙）"); setTimeout(after,1100); } else setTimeout(after,220); } },230);
-}
-function resolveTile(i){
-  const t=tiles[i].type;
-  if(t==="start"){ setMsg("🏠 出發點，補給站。"); endTurn(); }
-  else if(t==="shop"){ openShop(); }
-  else if(t==="gym"){ openGymIntro(); }
-  else encounter(TERRAIN_TYPE[t]);   // forest/lake/mount → land/sea/air
-}
-function endTurn(){
-  const val=1+Math.floor(Math.random()*6); let left=val;
-  const iv=setInterval(()=>{ rivalPos=(rivalPos+1)%RING.length; placeToken("token-rival",rivalPos);
-    if(--left<=0){ clearInterval(iv); if(rivalPos===pPos){ setMsg(`${REGIONS[region].rival} 對手追上你了！`); setTimeout(()=>startBattle("rival"),500); } else busy=false; } },190);
+function enterWorlds(){
+  const {d}=rdata(P);
+  document.getElementById("worlds-title").textContent = `${P==="a"?"🧚‍♂️":"🧙‍♂️"} ${d.grade}年級 · ${seasonName(d.season)}`;
+  renderWorlds(); refreshHUD(); go("page-worlds");
 }
 
-/* ============================================================ 初始夥伴 */
-function starterSelect(){
-  const opts=["land","sea","air"].map(tp=>{ const pool=SP_BY_TYPE[tp]; return pool[rnd(0,pool.length-1)]; });
+/* ---------- 年級/季節設定 ---------- */
+let setupSel={grade:null,season:null};
+function openSetup(first){
+  const {d}=rdata(P);
+  setupSel={grade:d.set?d.grade:null, season:d.set?d.season:null};
   const box=modalBox();
-  box.innerHTML=`<span class="tag">🌟 選擇你的初始夥伴</span><h3 style="text-align:center;">先選一隻，答對一題就收服牠！</h3>
-    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">${opts.map((sp,idx)=>`
-      <button class="menu-card" style="flex-direction:column;width:31%;min-width:96px;text-align:center;padding:10px 6px;" data-idx="${idx}">
-        <div class="mon-art" style="width:76px;height:76px;">${monVisual(sp,1)}</div>
-        <div class="mon-name" style="font-size:14px;">${sp.name}</div>${typeChip(sp.type)}</button>`).join("")}</div>`;
-  box.querySelectorAll("button[data-idx]").forEach(b=>b.onclick=()=>{ SFX.tap(); starterConfirm(opts[+b.dataset.idx]); });
-  openModal("modal");
-}
-function starterConfirm(sp){
-  const q=nextQ(REGIONS[region].subject); const box=modalBox();
-  box.innerHTML=`<span class="tag">✨ 收服 ${sp.name}</span><div class="mon-art">${monVisual(sp,1)}</div>
-    <div style="text-align:center;" class="mon-name">${sp.name} ${typeChip(sp.type)}</div>
-    <p style="text-align:center;font-weight:800;color:#5a6072;">答對就把牠收進隊伍！</p>
-    <div class="q-text">${q.q}</div><div class="choices" id="st-c"></div>`;
-  renderChoices("st-c",q,(ok)=>{ setTimeout(()=>{
-    if(ok){ const {all,d}=rdata(role); d.starterPicked=true; saveAll(all); addToParty(sp.id,1); addTrainerExp(2);
-      SFX.catchok(); startConfetti(1200);
-      box.innerHTML=`<div style="text-align:center;"><span class="tag">🎉 成為夥伴！</span><div class="mon-art">${monVisual(sp,1)}</div><div class="mon-name">${sp.name} 加入隊伍！</div><div class="mon-meta">Lv1 · ${TYPES[sp.type].n}系</div><div class="modal-actions"><button class="btn big" id="st-ok">出發冒險！</button></div></div>`;
-      document.getElementById("st-ok").onclick=()=>{ closeModal("modal"); setMsg("擲骰子開始冒險！"); };
-    } else starterSelect();
-  },700); });
+  box.innerHTML=`<span class="tag">⚙️ 玩家設定</span>
+    <h3>${first?"歡迎！先告訴我你是誰":"更改年級 / 季節"}</h3>
+    <p style="font-weight:800;color:#5a6072;margin:4px 0;">現在是哪個假期？</p>
+    <div class="season-row">
+      <button class="gbtn" data-season="summer">☀️ 暑假</button>
+      <button class="gbtn" data-season="winter">❄️ 寒假</button>
+    </div>
+    <p style="font-weight:800;color:#5a6072;margin:10px 0 4px;" id="setup-grade-label">你剛讀完幾年級？</p>
+    <div class="setup-grid">${[1,2,3,4,5,6].map(g=>`<button class="gbtn" data-grade="${g}">${g} 年級</button>`).join("")}</div>
+    <div class="modal-actions"><button class="btn big" id="setup-go" disabled>開始冒險！</button>${first?"":`<button class="btn ghost" onclick="closeModal('modal')">取消</button>`}</div>`;
+  function paint(){
+    box.querySelectorAll("[data-season]").forEach(b=>b.classList.toggle("sel",b.dataset.season===setupSel.season));
+    box.querySelectorAll("[data-grade]").forEach(b=>b.classList.toggle("sel",+b.dataset.grade===setupSel.grade));
+    document.getElementById("setup-grade-label").textContent = setupSel.season==="winter" ? "你現在讀幾年級？（上學期剛結束）" : "你剛讀完幾年級？";
+    document.getElementById("setup-go").disabled=!(setupSel.season&&setupSel.grade);
+  }
+  box.querySelectorAll("[data-season]").forEach(b=>b.onclick=()=>{ SFX.tap(); setupSel.season=b.dataset.season; paint(); });
+  box.querySelectorAll("[data-grade]").forEach(b=>b.onclick=()=>{ SFX.tap(); setupSel.grade=+b.dataset.grade; paint(); });
+  document.getElementById("setup-go").onclick=()=>{
+    const {all,d}=rdata(P); d.set=true; d.grade=setupSel.grade; d.season=setupSel.season; saveAll(all);
+    closeModal("modal"); updateHomeBadges(); enterWorlds();
+  };
+  paint(); openModal("modal");
 }
 
-/* ============================================================ 野生遭遇（抓怪） */
-let curWild=null;
-function encounter(type){
-  const pool=SP_BY_TYPE[type]; const sp=pool[rnd(0,pool.length-1)];
-  const cap=trainerLvl(); const lvl=Math.max(1, Math.min(10, rnd(cap-1,cap+1)));
-  curWild={ sp, lvl };
-  const q=nextQ(REGIONS[region].subject); const box=modalBox();
-  box.innerHTML=`<span class="tag">${TYPES[type].tIcon} 野生怪獸出現！</span>
-    <div class="mon-art">${monVisual(sp,lvl)}</div>
-    <div style="text-align:center;" class="mon-name">${sp.name} <span class="mon-meta">Lv${lvl}</span></div>
-    <div style="text-align:center;">${typeChip(type)}</div>
-    <p style="text-align:center;font-weight:800;color:#5a6072;">答對就能丟球收服牠！</p>
-    <div class="q-text">${q.q}</div><div class="choices" id="enc-c"></div>`;
-  renderChoices("enc-c",q,(ok)=>{ addTrainerExp(2); setTimeout(()=>{   // 無論有沒有收服，經驗都 +2
-    if(ok){ addCoins(2); SFX.coin();
-      if(curWild.lvl>trainerLvl()){ // 等級太高抓不到
-        box.innerHTML=`<div style="text-align:center;"><span class="tag">⚠️ 等級太高</span><div class="mon-art" style="filter:grayscale(.4)">${monVisual(sp,lvl)}</div><div class="mon-name">${sp.name} Lv${lvl}</div><div class="mon-meta">你目前訓練師 Lv${trainerLvl()}，還收服不了牠。<br>多對戰提升訓練師等級再來！</div><div class="modal-actions"><button class="btn" id="e-ok">知道了</button></div></div>`;
-        document.getElementById("e-ok").onclick=()=>{ closeModal("modal"); setMsg("提升訓練師等級後就抓得到高級怪獸！"); endTurn(); };
-      } else chooseBall();
-    } else { closeModal("modal"); setMsg(`😿 答錯了，${sp.name} 逃走了…（訓練師經驗 +2）`); endTurn(); }
-  },800); });
+/* ---------- 世界模式判定 ----------
+   回傳 {label, sem, bias}：sem="s"上/"x"下/"mix"，bias="hard"/"easy"/"any" */
+function worldMode(w){
+  const {d}=rdata(P);
+  if(d.season==="summer"){
+    if(w===d.grade) return {label:"review", sem:"x", bias:"hard"};
+    if(w===d.grade+1) return {label:"preview", sem:"s", bias:"easy"};
+  } else {
+    if(w===d.grade) return {label:"review", sem:"s", bias:"hard"};
+  }
+  return {label:"free", sem:"mix", bias:"any"};
+}
+function gsOf(w,mode){ if(mode.sem==="mix") return w+(Math.random()<.5?"s":"x"); return w+mode.sem; }
+const WORLD_EMOJI=["🌱","🌊","🌋","🏜️","❄️","🌌"];
+const MODE_TAG={review:'<span class="w-tag t-review">📖 複習重點</span>',preview:'<span class="w-tag t-preview">🌱 預習搶先</span>',free:'<span class="w-tag t-free">⚔️ 自由挑戰</span>'};
+
+function renderWorlds(){
+  const grid=document.getElementById("world-grid"); grid.innerHTML="";
+  for(let w=1;w<=6;w++){
+    const mode=worldMode(w);
+    const total=13*3, got=worldStarSum(w)+(hasBadge(w)?3:0);
+    const pct=Math.min(100,Math.round(got/total*100));
+    const card=document.createElement("div");
+    card.className="world-card "+(mode.label!=="free"?mode.label:"");
+    card.innerHTML=`<div class="w-head"><div class="w-emoji">${WORLD_EMOJI[w-1]}</div>
+      <div><div class="w-name">${w} 年級世界 ${hasBadge(w)?"🏅":""}</div>${MODE_TAG[mode.label]}</div></div>
+      <div class="w-prog">⭐ ${worldStarSum(w)} / 36 ${hasBadge(w)?"· 魔王已擊敗":""}</div>
+      <div class="prog-track"><i style="width:${pct}%"></i></div>`;
+    card.onclick=()=>{ SFX.tap(); openWorld(w); };
+    grid.appendChild(card);
+  }
+}
+
+/* ---------- 關卡地圖 ---------- */
+let curWorld=1;
+const SUBJ_CYCLE=["chinese","math","english"];
+const SUBJ_META={chinese:{n:"國語",ic:"📜",cls:"lv-sub-ch"},math:{n:"數學",ic:"🔢",cls:"lv-sub-ma"},english:{n:"英語",ic:"🔠",cls:"lv-sub-en"}};
+function openWorld(w){
+  curWorld=w;
+  const mode=worldMode(w);
+  document.getElementById("lv-title").textContent=`${WORLD_EMOJI[w-1]} ${w} 年級世界`;
+  document.getElementById("lv-subtitle").innerHTML=
+    mode.label==="review"?`📖 複習模式：${w}年級${mode.sem==="x"?"下":"上"}學期（題目會比課本難一點點，練功最有效！）`
+    :mode.label==="preview"?`🌱 預習模式：${w}年級上學期（題目比課本簡單一點點，先熟悉不害怕！）`
+    :`⚔️ 自由挑戰：${w}年級全學期混合`;
+  renderLevels(); refreshHUD(); go("page-levels");
+}
+function stageUnlocked(w,i){ if(i===0) return true; return getStars(w,i-1)>0; }
+function bossUnlocked(w){ for(let i=0;i<12;i++) if(getStars(w,i)===0) return false; return true; }
+function renderLevels(){
+  const path=document.getElementById("lv-path"); path.innerHTML="";
+  for(let row=0;row<4;row++){
+    const div=document.createElement("div"); div.className="lv-row"+(row%2?" alt":"");
+    const idxs=[row*3,row*3+1,row*3+2];
+    (row%2?idxs.slice().reverse():idxs).forEach(i=>{
+      const subj=SUBJ_CYCLE[i%3], meta=SUBJ_META[subj];
+      const unlocked=stageUnlocked(curWorld,i), stars=getStars(curWorld,i);
+      const node=document.createElement("button");
+      node.className=`lv-node ${meta.cls}${unlocked?"":" locked"}${stars?" cleared":""}`;
+      node.innerHTML=`<div class="n-ic">${unlocked?meta.ic:"🔒"}</div><div class="n-nm">第${i+1}關 ${meta.n}</div><div class="n-stars">${"★".repeat(stars)}${"☆".repeat(Math.max(0,3-stars))||""}</div>`;
+      if(unlocked) node.onclick=()=>{ SFX.tap(); startStage(i); };
+      div.appendChild(node);
+    });
+    path.appendChild(div);
+  }
+  const bossRow=document.createElement("div"); bossRow.className="lv-row";
+  const boss=document.createElement("button");
+  const bu=bossUnlocked(curWorld);
+  boss.className="lv-node boss"+(bu?"":" locked")+(hasBadge(curWorld)?" cleared":"");
+  boss.innerHTML=`<div class="n-ic">${bu?"👑":"🔒"}</div><div class="n-nm">世界魔王</div><div class="n-stars">${hasBadge(curWorld)?"🏅 已擊敗":"打完12關解鎖"}</div>`;
+  if(bu) boss.onclick=()=>{ SFX.tap(); openBossIntro(); };
+  bossRow.appendChild(boss); path.appendChild(bossRow);
+}
+
+/* ================= 關卡流程：5 題 → (對戰關加打對手) → 結算＋抓怪 ================= */
+let ST=null; // stage state
+function stageTerrain(i){ return ["land","sea","air"][i%3]; }
+function startStage(i){
+  const mode=worldMode(curWorld);
+  ST={ idx:i, subject:SUBJ_CYCLE[i%3], mode, correct:0, qi:0, total:5, hasRival:(i===3||i===7||i===11) };
+  renderStageQ();
   openModal("modal");
+}
+function renderStageQ(){
+  const meta=SUBJ_META[ST.subject];
+  const q=nextQ(ST.subject, gsOf(curWorld,ST.mode), ST.mode.bias);
+  const box=modalBox();
+  box.innerHTML=`<span class="tag">${meta.ic} 第${ST.idx+1}關 ${meta.n}</span>
+    <div class="q-progress" style="margin-top:8px;">${"🔵".repeat(ST.qi)}${"⚪".repeat(ST.total-ST.qi)} 　答對 ${ST.correct} 題</div>
+    <div class="q-text">${q.q}</div><div class="choices" id="st-c"></div>`;
+  renderChoices("st-c",q,(ok)=>{
+    if(ok){ ST.correct++; addExp(1); addCoins(1); }
+    setTimeout(()=>{
+      ST.qi++;
+      if(ST.qi<ST.total) renderStageQ();
+      else if(ST.hasRival) startBattle("rival");
+      else stageResult();
+    }, ok?650:1000);
+  });
+}
+function stageResult(extraMsg){
+  const c=ST.correct, cleared=c>=3;
+  const stars=c>=5?3:c>=4?2:c>=3?1:0;
+  const box=modalBox();
+  if(cleared){
+    setStars(curWorld,ST.idx,stars); addExp(3); addCoins(5);
+    if(stars===3) addBall("wood",1);
+    SFX.win(); if(stars===3) startConfetti(1500);
+    box.innerHTML=`<div style="text-align:center;"><span class="tag">🎉 過關！</span>
+      <div class="stars-big">${"★".repeat(stars)}${"☆".repeat(3-stars)}</div>
+      <div class="mon-meta">答對 ${c}/5 ${extraMsg||""}　🪙+5 經驗+3 ${stars===3?"· 🟢木靈珠+1":""}</div>
+      <div class="modal-actions"><button class="btn big" id="sr-catch">往前走…有怪獸出沒！</button></div></div>`;
+    document.getElementById("sr-catch").onclick=()=>wildCatch();
+  } else {
+    SFX.lose();
+    box.innerHTML=`<div style="text-align:center;"><span class="tag">😵 差一點！</span>
+      <div style="font-size:44px;margin:8px 0;">💫</div>
+      <div class="mon-meta">答對 ${c}/5，需要答對 3 題才能過關。別灰心，錯的題目會再出現，多練就會！</div>
+      <div class="modal-actions"><button class="btn big" id="sr-retry">再挑戰一次</button><button class="btn ghost" id="sr-exit">先休息</button></div></div>`;
+    document.getElementById("sr-retry").onclick=()=>startStage(ST.idx);
+    document.getElementById("sr-exit").onclick=()=>{ closeModal("modal"); renderLevels(); };
+  }
+}
+
+/* ---------- 過關後抓怪（答 1 題 → 丟球） ---------- */
+let curWild=null;
+function wildCatch(){
+  const t=stageTerrain(ST.idx);
+  const sp=pick(SP_BY_TYPE[t]);
+  const cap=trainerLvl(); const lvl=Math.max(1,Math.min(10,rnd(Math.max(1,cap-1),cap+1)));
+  curWild={sp,lvl};
+  const q=nextQ(ST.subject, gsOf(curWorld,ST.mode), ST.mode.bias);
+  const box=modalBox();
+  box.innerHTML=`<span class="tag">${t==="land"?"🌳 森林":t==="sea"?"🏞️ 湖泊":"⛰️ 高山"}的野生怪獸！</span>
+    <div class="mon-art">${monVisual(sp,lvl)}</div>
+    <div style="text-align:center;" class="mon-name">${sp.name} <span class="mon-meta">Lv${lvl}</span> ${typeChip(sp.type)}</div>
+    <p style="text-align:center;font-weight:800;color:#5a6072;">答對這題就能丟球收服牠！</p>
+    <div class="q-text">${q.q}</div><div class="choices" id="wc-c"></div>`;
+  renderChoices("wc-c",q,(ok)=>{ if(ok){ addExp(1); addCoins(1); } setTimeout(()=>{
+    if(!ok){ closeModal("modal"); renderLevels(); return; }
+    if(curWild.lvl>trainerLvl()){
+      box.innerHTML=`<div style="text-align:center;"><span class="tag">⚠️ 等級太高</span><div class="mon-art" style="filter:grayscale(.4)">${monVisual(sp,lvl)}</div><div class="mon-name">${sp.name} Lv${lvl}</div><div class="mon-meta">你目前訓練師 Lv${trainerLvl()}，還收服不了牠。繼續闖關升級吧！</div><div class="modal-actions"><button class="btn" id="wc-ok">知道了</button></div></div>`;
+      document.getElementById("wc-ok").onclick=()=>{ closeModal("modal"); renderLevels(); };
+    } else chooseBall();
+  }, ok?700:1000); });
 }
 function chooseBall(){
   const balls=getBalls(); const {sp,lvl}=curWild; const box=modalBox();
@@ -593,126 +1107,181 @@ function chooseBall(){
     row.className="shop-item"; row.style.width="100%"; row.style.border="none"; row.disabled=cnt<=0;
     row.innerHTML=`<div class="s-ic">${b.e}</div><div class="s-body"><div class="s-nm">${b.n}（成功率 ${Math.round(b.rate*100)}%）</div><div class="s-desc">擁有 ${cnt} 顆</div></div><div style="font-weight:900;">${cnt>0?"丟！":"沒了"}</div>`;
     if(cnt>0) row.onclick=()=>throwBall(tp); list.appendChild(row); });
-  box.querySelector("#ball-skip").onclick=()=>{ closeModal("modal"); setMsg("先不抓，繼續探索。"); endTurn(); };
+  box.querySelector("#ball-skip").onclick=()=>{ closeModal("modal"); renderLevels(); };
 }
 function throwBall(tp){
   if(!useBall(tp)) return; const b=BALLS[tp]; const {sp,lvl}=curWild;
   const penalty={1:1,2:.92,3:.85,4:.78,5:.72,6:.66,7:.6,8:.55,9:.5,10:.45}[lvl]||.5;
   const success=Math.random()<b.rate*penalty; const box=modalBox();
-  if(success){ addToParty(sp.id,lvl); addCoins(3); addTrainerExp(2); SFX.catchok(); startConfetti(1200);
-    box.innerHTML=`<div style="text-align:center;"><span class="tag">🎉 收服成功！</span><div class="mon-art">${monVisual(sp,lvl)}</div><div class="mon-name">${sp.name} Lv${lvl} 加入隊伍！</div><div class="mon-meta">🪙 +3 · 圖鑑進度 ${dexCount()}/990</div><div class="modal-actions"><button class="btn big" id="c-ok">太好了！</button></div></div>`;
-    box.querySelector("#c-ok").onclick=()=>{ closeModal("modal"); setMsg(`收服了 ${sp.name}！繼續探索～`); endTurn(); };
+  if(success){ addToParty(sp.id,lvl); addCoins(3); addExp(2); SFX.catchok(); startConfetti(1200);
+    box.innerHTML=`<div style="text-align:center;"><span class="tag">🎉 收服成功！</span><div class="mon-art">${monVisual(sp,lvl)}</div><div class="mon-name">${sp.name} Lv${lvl} 加入隊伍！</div><div class="mon-meta">圖鑑進度 ${dexCount()}/990</div><div class="modal-actions"><button class="btn big" id="c-ok">太好了！</button></div></div>`;
+    box.querySelector("#c-ok").onclick=()=>{ closeModal("modal"); renderLevels(); };
   } else { SFX.wrong();
-    box.innerHTML=`<div style="text-align:center;"><span class="tag">💨 差一點！</span><div class="mon-art" style="filter:grayscale(.4) opacity(.75)">${monVisual(sp,lvl)}</div><div class="mon-name">${sp.name} 掙脫了…</div><div class="mon-meta">用更高級的珠子成功率更高！</div><div class="modal-actions">${anyBall()?`<button class="btn" id="c-retry">再丟一顆</button>`:""}<button class="btn ghost" id="c-give">放牠走</button></div></div>`;
+    box.innerHTML=`<div style="text-align:center;"><span class="tag">💨 差一點！</span><div class="mon-art" style="filter:grayscale(.4) opacity(.75)">${monVisual(sp,lvl)}</div><div class="mon-name">${sp.name} 掙脫了…</div><div class="modal-actions">${anyBall()?`<button class="btn" id="c-retry">再丟一顆</button>`:""}<button class="btn ghost" id="c-give">放牠走</button></div></div>`;
     const rt=box.querySelector("#c-retry"); if(rt) rt.onclick=()=>chooseBall();
-    box.querySelector("#c-give").onclick=()=>{ closeModal("modal"); setMsg(`${sp.name} 逃走了…`); endTurn(); };
+    box.querySelector("#c-give").onclick=()=>{ closeModal("modal"); renderLevels(); };
   }
 }
 function anyBall(){ const b=getBalls(); return (b.wood+b.silver+b.star)>0; }
 
-/* ============================================================ 對戰（3v3） */
+/* ================= 對戰（動畫版） ================= */
+const GYM_LEADERS=[{name:"磐岩",e:"🧔"},{name:"潮汐",e:"🧜‍♀️"},{name:"疾風",e:"🧙"},{name:"綠影",e:"🧝"},{name:"焱陽",e:"👨‍🚀"},{name:"夜曦",e:"🧛"}];
 let bt=null;
 function topParty(n){ return party().slice().sort((a,b)=>b.lvl-a.lvl).slice(0,n); }
 function makeFighter(inst){ const sp=SPECIES[inst.sid]; const s=statAt(sp,inst.lvl); return { sid:inst.sid, lvl:inst.lvl, sp, hp:s.hp, maxhp:s.hp, ref:inst }; }
-function startBattle(kind){
-  closeModal("modal");
-  let oppTeam, leader=null;
-  if(kind==="gym"){
-    const ls=party().map(m=>m.lvl).sort((a,b)=>b-a); const M=ls.length>=2?ls[1]:(ls[0]||1);
-    const tp=["land","sea","air"][rnd(0,2)]; const pool=SP_BY_TYPE[tp];
-    leader=GYM_LEADERS[rnd(0,GYM_LEADERS.length-1)];
-    oppTeam=[M,Math.max(1,M-1),Math.max(1,M-1)].map(l=>makeFighter({sid:pool[rnd(0,pool.length-1)].id,lvl:l}));
-  } else {
-    const oc=rnd(1,3); const avg=Math.max(1,Math.round(party().reduce((a,m)=>a+m.lvl,0)/Math.max(1,party().length)));
-    oppTeam=[]; for(let i=0;i<oc;i++){ const tp=["land","sea","air"][rnd(0,2)]; const pool=SP_BY_TYPE[tp]; oppTeam.push(makeFighter({sid:pool[rnd(0,pool.length-1)].id,lvl:Math.max(1,Math.min(10,avg+rnd(-1,1)))})); }
-  }
-  const pCount=Math.min(oppTeam.length, party().length); // 你不能比對手多
-  const pTeam=topParty(pCount).map(makeFighter);
-  bt={ kind, leader, pTeam, oTeam:oppTeam, pIdx:0, oIdx:0, oppMax:Math.max(...oppTeam.map(f=>f.lvl)) };
-  renderBattle(kind==="gym"?`🏛️ ${leader.name} 的道館挑戰！`:`${REGIONS[region].rival} 對手來襲！`, "");
+function ensureStarterThen(fn){
+  if(party().length>0){ fn(); return; }
+  // 沒有怪獸：先送一隻初始夥伴（答一題）
+  const opts=["land","sea","air"].map(tp=>pick(SP_BY_TYPE[tp]));
+  const box=modalBox();
+  box.innerHTML=`<span class="tag">🌟 選擇你的初始夥伴</span><h3 style="text-align:center;">對戰需要怪獸！先選一隻收服牠</h3>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">${opts.map((sp,i)=>`
+      <button class="lv-node" style="width:31%;min-width:96px;" data-i="${i}">
+        <div class="mon-art" style="width:70px;height:70px;">${monVisual(sp,1)}</div>
+        <div class="n-nm">${sp.name}</div>${typeChip(sp.type)}</button>`).join("")}</div>`;
+  box.querySelectorAll("button[data-i]").forEach(b=>b.onclick=()=>{
+    const sp=opts[+b.dataset.i];
+    const q=nextQ(ST?ST.subject:"math", gsOf(curWorld,worldMode(curWorld)), "easy");
+    box.innerHTML=`<span class="tag">✨ 收服 ${sp.name}</span><div class="mon-art">${monVisual(sp,1)}</div>
+      <p style="text-align:center;font-weight:800;color:#5a6072;">答對就把牠收進隊伍！</p>
+      <div class="q-text">${q.q}</div><div class="choices" id="stt-c"></div>`;
+    renderChoices("stt-c",q,(ok)=>{ setTimeout(()=>{ if(ok){ addToParty(sp.id,1); addExp(2); SFX.catchok(); fn(); } else ensureStarterThen(fn); },700); });
+  });
   openModal("modal");
 }
-function alive(team){ return team.filter(f=>f.hp>0).length; }
-function dots(team,idx){ return team.map((f,i)=>f.hp>0?(i===idx?"🔵":"⚪"):"⚫").join(""); }
+function startBattle(kind){
+  ensureStarterThen(()=>{
+    let oppTeam, leader=null, title;
+    if(kind==="boss"){
+      const ls=party().map(m=>m.lvl).sort((a,b)=>b-a); const M=ls.length>=2?ls[1]:(ls[0]||1);
+      const tp=pick(["land","sea","air"]); const pool=SP_BY_TYPE[tp];
+      leader=pick(GYM_LEADERS);
+      oppTeam=[M,Math.max(1,M-1),Math.max(1,M-1)].map(l=>makeFighter({sid:pick(pool).id,lvl:l}));
+      title=`👑 ${leader.e} 魔王 ${leader.name} 的挑戰！`;
+    } else {
+      const avg=Math.max(1,Math.round(party().reduce((a,m)=>a+m.lvl,0)/Math.max(1,party().length)));
+      const oc=rnd(1,2);
+      oppTeam=[]; for(let i=0;i<oc;i++){ const tp=pick(["land","sea","air"]); oppTeam.push(makeFighter({sid:pick(SP_BY_TYPE[tp]).id,lvl:Math.max(1,Math.min(10,avg+rnd(-1,1)))})); }
+      title=`⚔️ 訓練家對手來挑戰！`;
+    }
+    const pCount=Math.min(kind==="boss"?3:oppTeam.length, Math.max(1,party().length));
+    const pTeam=topParty(pCount).map(makeFighter);
+    bt={ kind, leader, title, pTeam, oTeam:oppTeam, pIdx:0, oIdx:0, oppMax:Math.max(...oppTeam.map(f=>f.lvl)) };
+    renderBattle("");
+    openModal("modal");
+  });
+}
+function alive(t){ return t.filter(f=>f.hp>0).length; }
+function dots(t,i){ return t.map((f,k)=>f.hp>0?(k===i?"🔵":"⚪"):"⚫").join(""); }
 function hpPct(f){ return Math.max(0,Math.round(f.hp/f.maxhp*100)); }
-function renderBattle(title,note){
+function battleHTML(note){
   const p=bt.pTeam[bt.pIdx], o=bt.oTeam[bt.oIdx];
-  const q=nextQ(REGIONS[region].subject); const box=modalBox();
-  box.innerHTML=`<span class="tag">${title}</span>
-    <div class="vs-wrap">
-      <div class="fighter"><div class="f-art">${monVisual(o.sp,o.lvl)}</div><div class="f-nm">${o.sp.name} Lv${o.lvl}</div>
-        <div class="hpbar2"><i class="${hpPct(o)<35?'low':''}" style="width:${hpPct(o)}%"></i></div>
-        <div class="team-dots">對手 ${dots(bt.oTeam,bt.oIdx)}</div></div>
-      <div class="vs-mid">VS</div>
-      <div class="fighter"><div class="f-art">${monVisual(p.sp,p.lvl)}</div><div class="f-nm">${p.sp.name} Lv${p.lvl}</div>
-        <div class="hpbar2"><i class="${hpPct(p)<35?'low':''}" style="width:${hpPct(p)}%"></i></div>
-        <div class="team-dots">你的 ${dots(bt.pTeam,bt.pIdx)}</div></div>
+  return `<span class="tag">${bt.title}</span>
+    <div class="arena">
+      <div class="vs-wrap" id="vs-wrap">
+        <div class="fighter"><div class="f-art" id="f-opp">${monVisual(o.sp,o.lvl)}</div><div class="f-nm">${o.sp.name} Lv${o.lvl}</div>
+          <div class="hpbar2"><i id="hp-opp" class="${hpPct(o)<35?'low':''}" style="width:${hpPct(o)}%"></i></div>
+          <div class="team-dots">${dots(bt.oTeam,bt.oIdx)}</div></div>
+        <div class="vs-mid">VS</div>
+        <div class="fighter"><div class="f-art" id="f-me">${monVisual(p.sp,p.lvl)}</div><div class="f-nm">${p.sp.name} Lv${p.lvl}</div>
+          <div class="hpbar2"><i id="hp-me" class="${hpPct(p)<35?'low':''}" style="width:${hpPct(p)}%"></i></div>
+          <div class="team-dots">${dots(bt.pTeam,bt.pIdx)}</div></div>
+      </div>
+      <div class="move-banner" id="move-banner">${note||(BEATS[p.sp.type]===o.sp.type?"⚡ 你的屬性剋制對方（傷害+30%）！":"")}</div>
     </div>
-    <div class="dmg-note" id="dmg-note">${note||`${BEATS[p.sp.type]===o.sp.type?"⚡ 你剋制對方！":""}`}</div>
-    <div class="q-text">${q.q}</div><div class="choices" id="bt-c"></div>`;
+    <div class="q-text" id="bt-q"></div><div class="choices" id="bt-c"></div>`;
+}
+function renderBattle(note){
+  const box=modalBox();
+  box.innerHTML=battleHTML(note);
+  const q=nextQ(ST?ST.subject:pick(SUBJ_CYCLE), gsOf(curWorld,worldMode(curWorld)), worldMode(curWorld).bias);  // 魔王戰：三科隨機輪出
+  document.getElementById("bt-q").textContent=q.q;
   renderChoices("bt-c",q,(ok)=>{
-    let note2="";
-    if(ok){ const r=dmgOf(p.sp,p.lvl,o.sp,o.lvl); o.hp-=r.dmg; r.crit?SFX.crit():SFX.hit(); note2=`⚔️ ${p.sp.name} 攻擊！造成 ${r.dmg} 傷害${r.crit?"（剋制 +30%！）":""}`; }
-    else { const r=dmgOf(o.sp,o.lvl,p.sp,p.lvl); p.hp-=r.dmg; SFX.wrong(); note2=`😵 答錯！${o.sp.name} 反擊，你受 ${r.dmg} 傷害${r.crit?"（牠剋制你）":""}`; }
+    document.querySelectorAll("#bt-c .choice").forEach(x=>x.disabled=true);
+    setTimeout(()=>animateAttack(ok), 550);
+  });
+}
+/* 攻擊動畫序列：橫幅→衝鋒→招式飛行→受擊震動→傷害數字→血條 */
+function animateAttack(playerAttacks){
+  const p=bt.pTeam[bt.pIdx], o=bt.oTeam[bt.oIdx];
+  const atk=playerAttacks?p:o, def=playerAttacks?o:p;
+  const r=dmgOf(atk.sp,atk.lvl,def.sp,def.lvl);
+  const mv=moveOf(atk.sp,atk.lvl);
+  const banner=document.getElementById("move-banner");
+  banner.textContent=`${atk.sp.name} 使出「${mv.name}」！${r.crit?"效果絕佳（+30%）！":""}`;
+  const atkEl=document.getElementById(playerAttacks?"f-me":"f-opp");
+  const defEl=document.getElementById(playerAttacks?"f-opp":"f-me");
+  atkEl.classList.add(playerAttacks?"lunge-l":"lunge-r");
+  const wrap=document.getElementById("vs-wrap");
+  const proj=document.createElement("div");
+  proj.className="proj "+(playerAttacks?"go-l":"go-r"); proj.textContent=mv.e;
+  wrap.appendChild(proj);
+  setTimeout(()=>{
+    def.hp-=r.dmg;
+    defEl.classList.add("hit-shake");
+    r.crit?SFX.crit():SFX.hit();
+    const dmg=document.createElement("div");
+    dmg.className="dmg-float"+(r.crit?" crit":""); dmg.textContent="-"+r.dmg;
+    dmg.style[playerAttacks?"left":"right"]="18%";
+    wrap.appendChild(dmg);
+    const hpEl=document.getElementById(playerAttacks?"hp-opp":"hp-me");
+    hpEl.style.width=hpPct(def)+"%"; if(hpPct(def)<35) hpEl.classList.add("low");
     setTimeout(()=>{
-      if(o.hp<=0){ if(bt.oIdx<bt.oTeam.length-1){ bt.oIdx++; note2+=` 對手換上 ${bt.oTeam[bt.oIdx].sp.name}！`; } }
-      if(p.hp<=0){ if(bt.pIdx<bt.pTeam.length-1){ bt.pIdx++; note2+=` 你換上 ${bt.pTeam[bt.pIdx].sp.name}！`; } }
+      let note="";
+      if(def.hp<=0){
+        if(playerAttacks){ if(bt.oIdx<bt.oTeam.length-1){ bt.oIdx++; note=`對手換上 ${bt.oTeam[bt.oIdx].sp.name}！`; } }
+        else { if(bt.pIdx<bt.pTeam.length-1){ bt.pIdx++; note=`你換上 ${bt.pTeam[bt.pIdx].sp.name}！`; } }
+      }
       if(alive(bt.oTeam)===0) battleEnd(true);
       else if(alive(bt.pTeam)===0) battleEnd(false);
-      else renderBattle(title,note2);
-    }, ok?650:850);
-  });
+      else renderBattle(note);
+    }, 900);
+  }, 520);
 }
 function battleEnd(win){
   const box=modalBox();
   if(win){
-    // 升級：參戰怪獸戰勝同級(對手最高級≥自己)→+1勝，滿5升級
-    const leveled=[]; const {all,d}=rdata(role);
+    const leveled=[]; const {all,d}=rdata(P);
     bt.pTeam.forEach(f=>{ const inst=d.party.find(m=>m.uid===f.ref.uid); if(!inst) return;
-      if(bt.oppMax>=inst.lvl && inst.lvl<10){ inst.wins=(inst.wins||0)+1; if(inst.wins>=5){ inst.wins=0; inst.lvl++; bumpMax(inst.sid,inst.lvl,d); leveled.push(SPECIES[inst.sid].name+" → Lv"+inst.lvl); } } });
+      if(bt.oppMax>=inst.lvl && inst.lvl<10){ inst.wins=(inst.wins||0)+1; if(inst.wins>=5){ inst.wins=0; inst.lvl++; if(!d.maxLvl[inst.sid]||d.maxLvl[inst.sid]<inst.lvl) d.maxLvl[inst.sid]=inst.lvl; leveled.push(SPECIES[inst.sid].name+" → Lv"+inst.lvl); } } });
     saveAll(all);
-    addTrainerExp(3); const reward=bt.kind==="gym"?25:10; addCoins(reward);
-    if(leveled.length) SFX.levelup(); else SFX.win(); startConfetti(1800);
-    if(bt.kind==="gym"){ markGym(REGIONS[region].key);
-      box.innerHTML=`<div style="text-align:center;"><span class="tag">🏆 道館攻略成功！</span><div style="font-size:52px;">${bt.leader.e}🏛️</div>
-        <div class="mon-name">打敗 ${bt.leader.name}！</div>
-        <div class="mon-meta">🪙 +25 · 訓練師經驗 +3 · 取得 ${REGIONS[region].name} 徽章 🏅</div>
-        ${leveled.length?`<div class="mon-meta" style="color:var(--dark);">⬆️ ${leveled.join("、")}</div>`:""}
-        <div class="modal-actions"><button class="btn big" id="g-ok">太強了！</button></div></div>`;
-      box.querySelector("#g-ok").onclick=()=>{ closeModal("modal"); stopConfetti(); renderRegions(); go("page-region"); };
+    addExp(3);
+    if(bt.kind==="boss"){
+      giveBadge(curWorld); addCoins(30); SFX.win(); startConfetti(2500);
+      box.innerHTML=`<div style="text-align:center;"><span class="tag">🏅 魔王被擊敗！</span><div style="font-size:52px;">${bt.leader.e}👑</div>
+        <div class="mon-name">取得 ${curWorld} 年級世界徽章！</div>
+        <div class="mon-meta">🪙+30 · 經驗+3 ${leveled.length?"· ⬆️ "+leveled.join("、"):""}</div>
+        <div class="modal-actions"><button class="btn big" id="be-ok">太強了！</button></div></div>`;
+      box.querySelector("#be-ok").onclick=()=>{ closeModal("modal"); stopConfetti(); renderLevels(); renderWorlds&&renderWorlds(); };
     } else {
-      box.innerHTML=`<div style="text-align:center;"><span class="tag">⚔️ 對戰勝利！</span><div style="font-size:48px;">🎉</div>
-        <div class="mon-name">你贏了對手！</div><div class="mon-meta">🪙 +10 · 訓練師經驗 +3</div>
-        ${leveled.length?`<div class="mon-meta" style="color:var(--dark);">⬆️ ${leveled.join("、")}</div>`:""}
-        <div class="modal-actions"><button class="btn big" id="b-ok">繼續冒險</button></div></div>`;
-      box.querySelector("#b-ok").onclick=()=>{ closeModal("modal"); rivalPos=(rivalPos+5)%RING.length; placeToken("token-rival",rivalPos,true); setMsg("打贏對手！繼續探索～"); busy=false; };
+      addCoins(10); SFX.win();
+      box.innerHTML=`<div style="text-align:center;"><span class="tag">⚔️ 對戰勝利！</span><div style="font-size:46px;">🎉</div>
+        <div class="mon-meta">🪙+10 · 經驗+3 ${leveled.length?"· ⬆️ "+leveled.join("、"):""}</div>
+        <div class="modal-actions"><button class="btn big" id="be-ok">繼續！</button></div></div>`;
+      box.querySelector("#be-ok").onclick=()=>{ stageResult("· ⚔️打贏對手"); };
     }
   } else {
-    addTrainerExp(2); SFX.lose();
-    const isGym=bt.kind==="gym";
-    box.innerHTML=`<div style="text-align:center;"><span class="tag">😵 這次輸了…</span><div style="font-size:48px;">💫</div>
-      <div class="mon-name">你的怪獸全部倒下了</div><div class="mon-meta">訓練師經驗 +1。抓更多怪、升級後再挑戰！</div>
-      <div class="modal-actions">${isGym?`<button class="btn" id="l-retry">再挑戰道館</button>`:""}<button class="btn ghost" id="l-ok">${isGym?"先離開":"繼續"}</button></div></div>`;
-    const rt=box.querySelector("#l-retry"); if(rt) rt.onclick=()=>startBattle("gym");
-    box.querySelector("#l-ok").onclick=()=>{ closeModal("modal"); if(!isGym){ rivalPos=(rivalPos+5)%RING.length; placeToken("token-rival",rivalPos,true); } setMsg("重整旗鼓，再出發！"); busy=false; };
+    addExp(2); SFX.lose();
+    const isBoss=bt.kind==="boss";
+    box.innerHTML=`<div style="text-align:center;"><span class="tag">😵 這次輸了…</span><div style="font-size:46px;">💫</div>
+      <div class="mon-meta">經驗+2。抓更多怪、多過關升級，再來挑戰！</div>
+      <div class="modal-actions">${isBoss?`<button class="btn" id="be-retry">再挑戰魔王</button>`:""}<button class="btn ghost" id="be-ok">${isBoss?"先離開":"繼續"}</button></div></div>`;
+    const rt=box.querySelector("#be-retry"); if(rt) rt.onclick=()=>startBattle("boss");
+    box.querySelector("#be-ok").onclick=()=>{ if(isBoss){ closeModal("modal"); renderLevels(); } else stageResult("· 對手太強，下次再贏他"); };
   }
 }
-
-/* ============================================================ 道館入口 */
-function openGymIntro(){
-  const rg=REGIONS[region], beaten=gymBeaten(rg.key);
-  const ls=party().map(m=>m.lvl).sort((a,b)=>b-a); const M=ls.length>=2?ls[1]:(ls[0]||1);
+function openBossIntro(){
   const box=modalBox();
-  box.innerHTML=`<span class="tag">🏛️ ${rg.name}道館</span><h3 style="text-align:center;">${beaten?"你已攻略過 🏅":"挑戰道館，贏得徽章與經驗！"}</h3>
-    <p style="text-align:center;font-weight:800;color:#5a6072;line-height:1.6;">館主每次不同，會派出 <b>同一系列 3 隻</b> 怪獸，最高等級以你「第二高怪獸」為準（目前約 Lv${M}）。<br>你要派出 ${Math.min(3,party().length)} 隻（不多於對手）迎戰！</p>
-    <div class="modal-actions"><button class="btn big" id="gym-go">${beaten?"再挑戰":"開始挑戰！"}</button><button class="btn ghost" id="gym-skip">還沒準備好</button></div>`;
-  box.querySelector("#gym-go").onclick=()=>{ if(party().length===0){ setMsg("先抓幾隻怪獸再來！"); return; } startBattle("gym"); };
-  box.querySelector("#gym-skip").onclick=()=>{ closeModal("modal"); setMsg("道館隨時歡迎你回來！"); endTurn(); };
+  const ls=party().map(m=>m.lvl).sort((a,b)=>b-a); const M=ls.length>=2?ls[1]:(ls[0]||1);
+  box.innerHTML=`<span class="tag">👑 世界魔王</span><h3 style="text-align:center;">${hasBadge(curWorld)?"你已擊敗過魔王 🏅":"最終挑戰！"}</h3>
+    <p style="text-align:center;font-weight:800;color:#5a6072;line-height:1.6;">魔王會派出同一系列 3 隻怪獸（最高約 Lv${M}）。<br>你派 ${Math.min(3,Math.max(1,party().length))} 隻迎戰，答對＝攻擊、答錯＝被打！</p>
+    <div class="modal-actions"><button class="btn big" id="boss-go">${hasBadge(curWorld)?"再戰一次":"挑戰魔王！"}</button><button class="btn ghost" onclick="closeModal('modal')">還沒準備好</button></div>`;
+  box.querySelector("#boss-go").onclick=()=>{ ST=null; startBattle("boss"); };  // 清掉關卡狀態，讓魔王戰三科輪出
   openModal("modal");
 }
 
-/* ============================================================ 商店 */
-function openShop(){
+/* ================= 商店 / 選項 / 圖鑑 / 隊伍 ================= */
+function openShop(inStage){
   const box=modalBox();
   function draw(){ const balls=getBalls();
     box.innerHTML=`<span class="tag">🛒 捕獸珠商店</span><h3 style="text-align:center;">🪙 金幣：${getCoins()}</h3><div id="shop-list"></div><div class="modal-actions"><button class="btn" id="shop-close">離開商店</button></div>`;
@@ -720,44 +1289,38 @@ function openShop(){
     Object.keys(BALLS).forEach(tp=>{ const b=BALLS[tp], cnt=balls[tp]||0, can=getCoins()>=b.price; const row=document.createElement("div"); row.className="shop-item";
       row.innerHTML=`<div class="s-ic">${b.e}</div><div class="s-body"><div class="s-nm">${b.n}</div><div class="s-desc">成功率 ${Math.round(b.rate*100)}% · 擁有 ${cnt}</div></div><button class="btn" style="padding:8px 15px;font-size:14px;" ${can?"":"disabled"}>🪙${b.price}</button>`;
       row.querySelector("button").onclick=()=>{ if(getCoins()>=b.price){ addCoins(-b.price); addBall(tp,1); SFX.coin(); draw(); } }; list.appendChild(row); });
-    box.querySelector("#shop-close").onclick=()=>{ closeModal("modal"); setMsg("補滿珠子，繼續抓怪！"); endTurn(); };
+    box.querySelector("#shop-close").onclick=()=>{ closeModal("modal"); };
   }
   draw(); openModal("modal");
 }
-
-/* ---------- 選項渲染 ---------- */
 function renderChoices(cid,q,cb){
   curQ=q; const box=document.getElementById(cid); box.innerHTML="";
-  // 防呆：選項先以「半透明停用」出現 0.25 秒再開放，擋掉上一畫面穿透的點擊（iPad 幽靈點擊），
-  // 且使用者看得到按鈕亮起，不會有「點了沒反應」的錯覺
   q.choices.forEach(ch=>{ const b=document.createElement("button"); b.className="choice"; b.textContent=ch;
     b.disabled=true; b.style.opacity=".45";
     b.onclick=()=>{ const ok=(ch===q.a); box.querySelectorAll(".choice").forEach(x=>x.disabled=true);
-      if(ok){ b.classList.add("ok"); SFX.right(); } else { b.classList.add("no"); box.querySelectorAll(".choice").forEach(x=>{ if(x.textContent===q.a) x.classList.add("ok"); }); scheduleRetry(q,REGIONS[region].subject); }
+      if(ok){ b.classList.add("ok"); SFX.right(); } else { b.classList.add("no"); SFX.wrong(); box.querySelectorAll(".choice").forEach(x=>{ if(x.textContent===q.a) x.classList.add("ok"); }); scheduleRetry(q,ST?ST.subject:"math"); }
       cb(ok); };
     box.appendChild(b); });
   setTimeout(()=>{ box.querySelectorAll(".choice").forEach(x=>{ x.disabled=false; x.style.opacity="1"; }); },250);
 }
-
-/* ============================================================ 隊伍 / 圖鑑 */
 function openParty(){
   const p=party(); document.getElementById("party-title").textContent=`共 ${p.length} 隻`;
   const list=document.getElementById("party-list");
-  if(!p.length){ list.innerHTML=`<p style="text-align:center;color:#6b7186;font-weight:700;">還沒有怪獸～進世界抓幾隻吧！</p>`; }
+  if(!p.length){ list.innerHTML=`<p style="text-align:center;color:#6b7186;font-weight:700;">還沒有怪獸～去闖關抓幾隻吧！</p>`; }
   else{ list.innerHTML=p.slice().sort((a,b)=>b.lvl-a.lvl).map(m=>{ const sp=SPECIES[m.sid], s=statAt(sp,m.lvl);
-    return `<div class="party-row"><div class="p-art">${monVisual(sp,m.lvl)}</div><div class="p-body"><div class="p-nm">${sp.name} ${typeChip(sp.type)}</div><div class="p-sub">Lv${m.lvl} · ❤️${s.hp} ⚔️${s.atk} 🛡️${s.def} · 升級進度 ${m.wins||0}/5</div></div></div>`; }).join(""); }
+    return `<div class="party-row"><div class="p-art">${monVisual(sp,m.lvl)}</div><div class="p-body"><div class="p-nm">${sp.name} ${typeChip(sp.type)}</div><div class="p-sub">Lv${m.lvl} · ❤️${s.hp} ⚔️${s.atk} 🛡️${s.def} · 升級 ${m.wins||0}/5</div></div></div>`; }).join(""); }
   openModal("party-modal");
 }
 function openDex(){
   document.getElementById("dex-title").textContent=`已收集 ${dexCount()} / 990（99 種 × 10 級）`;
-  const mx=rdata(role).d.maxLvl; const grid=document.getElementById("dex-grid"); grid.innerHTML="";
+  const mx=rdata(P).d.maxLvl; const grid=document.getElementById("dex-grid"); grid.innerHTML="";
   SPECIES.forEach(sp=>{ const lv=mx[sp.id]||0; const have=lv>0; const it=document.createElement("div"); it.className="dex-item"+(have?" have":"");
     it.innerHTML=`<div class="dex-art ${have?"":"unknown"}">${have?monVisual(sp,lv):"❔"}</div><div class="dex-nm">#${sp.id} ${have?sp.name:"？？？"}</div><div class="dex-lv">${have?("Lv"+lv+"/10 "+TYPES[sp.type].n):"未捕獲"}</div>`;
     grid.appendChild(it); });
   openModal("dex-modal");
 }
 
-/* ============================================================ 彩帶 */
+/* ================= 彩帶 ================= */
 const canvas=document.getElementById("confetti"), cctx=canvas.getContext("2d");
 let pieces=[], ctimer=null;
 const CC=["#f6b40e","#2fae60","#3a6df0","#7c4dff","#ff6b6b","#ff9f43","#00d2d3"], CE=["⭐","✨","🎉","🏆","💎"];
@@ -785,9 +1348,9 @@ function stopConfetti(){ if(ctimer) cancelAnimationFrame(ctimer); ctimer=null; c
 const hot=document.getElementById("reset-hotspot");
 hot.addEventListener("dblclick",()=>openModal("reset-modal"));
 let lastTap=0; hot.addEventListener("touchend",e=>{ e.preventDefault(); const now=Date.now(); if(now-lastTap<350) openModal("reset-modal"); lastTap=now; });
-function doReset(){ const all=loadAll(); delete all[role]; saveAll(all); closeModal("reset-modal"); rdata(role); refreshHUD(); renderRegions(); alert("已清除本訓練家的進度。"); }
-addEventListener("resize",()=>{ if(document.getElementById("page-map").classList.contains("active")){ placeToken("token",pPos,true); placeToken("token-rival",rivalPos,true); } });
-rs();
+function doReset(){ const all=loadAll(); delete all[P]; saveAll(all); closeModal("reset-modal"); rdata(P); refreshHUD(); updateHomeBadges(); go("page-home"); }
+
+updateHomeBadges(); rs();
 </script>
 </body>
 </html>
