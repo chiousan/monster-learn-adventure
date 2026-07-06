@@ -1427,11 +1427,52 @@ function startBattle(kind){
       title=`⚔️ 訓練家對手來挑戰！`;
     }
     const pCount=Math.min(kind==="boss"?3:oppTeam.length, Math.max(1,party().length));
-    const pTeam=topParty(pCount).map(makeFighter);
-    bt={ kind, leader, title, pTeam, oTeam:oppTeam, pIdx:0, oIdx:0, oppMax:Math.max(...oppTeam.map(f=>f.lvl)) };
-    renderBattle("");
-    openModal("modal");
+    openTeamSelect(kind, oppTeam, leader, title, pCount);   // 開戰前先讓玩家自己派隊
   });
+}
+/* ---------- 出戰派遣畫面：看對手陣容 → 自選怪獸與順序（1號先上場） ---------- */
+function openTeamSelect(kind, oppTeam, leader, title, pCount){
+  const sel=[];   // 已選 uid（依點選順序）
+  const box=modalBox();
+  const plist=party().slice().sort((a,b)=>b.lvl-a.lvl);
+  function draw(){
+    box.innerHTML=`<span class="tag">${title}</span>
+      <h3 style="text-align:center;margin:8px 0 2px;">派遣出戰隊伍（最多 ${pCount} 隻，1號先上場）</h3>
+      <div style="text-align:center;" class="mon-meta">對手陣容 👇</div>
+      <div style="display:flex;justify-content:center;gap:10px;margin:6px 0;">
+        ${oppTeam.map(f=>`<div style="text-align:center;"><div class="p-art" style="width:54px;height:54px;margin:0 auto;">${monVisual(f.sp,f.lvl)}</div><div style="font-size:11px;font-weight:800;">Lv${f.lvl}</div>${typeChip(f.sp.type)}</div>`).join("")}
+      </div>
+      <div class="ex-bar" style="text-align:center;padding:6px 10px;">⚔️ 相剋：空剋陸、陸剋海、海剋空（剋到對方 +30% 傷害）</div>
+      <div id="ts-list" style="max-height:34dvh;overflow-y:auto;"></div>
+      <div class="modal-actions">
+        <button class="btn big" id="ts-go" disabled>開始對戰！</button>
+        <button class="btn ghost" id="ts-auto">⚡ 自動派遣</button>
+      </div>`;
+    const list=box.querySelector("#ts-list");
+    plist.forEach(m=>{ const sp=SPECIES[m.sid]; const s=statAt(sp,m.lvl);
+      const idx=sel.indexOf(m.uid);
+      const row=document.createElement("button");
+      row.className="party-row"; row.style.width="100%"; row.style.cursor="pointer";
+      row.style.border=idx>=0?"3px solid var(--accent,#2fae60)":"3px solid transparent";
+      row.innerHTML=`<div class="p-art">${monVisual(sp,m.lvl)}</div>
+        <div class="p-body"><div class="p-nm">${sp.name} ${typeChip(sp.type)}</div><div class="p-sub">Lv${m.lvl} · ❤️${s.hp} ⚔️${s.atk} 🛡️${s.def}</div></div>
+        <div style="font-weight:900;font-size:17px;color:var(--dark,#1f8a49);">${idx>=0?(idx+1)+"號":"選我"}</div>`;
+      row.onclick=()=>{ const i=sel.indexOf(m.uid);
+        if(i>=0) sel.splice(i,1);
+        else { if(sel.length>=pCount) return SFX.wrong(); sel.push(m.uid); }
+        SFX.tap(); draw(); };
+      list.appendChild(row); });
+    const go=box.querySelector("#ts-go"); go.disabled=sel.length===0;
+    go.onclick=()=>{ const team=sel.map(uid=>party().find(m=>m.uid===uid)).filter(Boolean).map(makeFighter);
+      beginBattle(kind,oppTeam,leader,title,team); };
+    box.querySelector("#ts-auto").onclick=()=>beginBattle(kind,oppTeam,leader,title,topParty(pCount).map(makeFighter));
+  }
+  draw(); openModal("modal");
+}
+function beginBattle(kind,oppTeam,leader,title,pTeam){
+  bt={ kind, leader, title, pTeam, oTeam:oppTeam, pIdx:0, oIdx:0, oppMax:Math.max(...oppTeam.map(f=>f.lvl)) };
+  renderBattle(`你先派出 ${pTeam[0].sp.name}！`);
+  openModal("modal");
 }
 function alive(t){ return t.filter(f=>f.hp>0).length; }
 function dots(t,i){ return t.map((f,k)=>f.hp>0?(k===i?"🔵":"⚪"):"⚫").join(""); }
@@ -1452,6 +1493,7 @@ function battleHTML(note){
       <div class="move-banner" id="move-banner">${note||(BEATS[p.sp.type]===o.sp.type?"⚡ 你的屬性剋制對方（傷害+30%）！":(BEATS[o.sp.type]===p.sp.type?"⚠️ 對方剋制你，考慮換怪獸！":""))}</div>
       <div class="party-strip" id="party-strip">${bt.pTeam.map((f,k)=>`<button data-k="${k}" class="${k===bt.pIdx?"on":""}" ${f.hp<=0?"disabled":""} title="${f.sp.name}"><div class="ps-art">${monVisual(f.sp,f.lvl)}</div></button>`).join("")}
         ${rdata(P).d.potions>0&&!bt.potionUsed?`<button id="bt-potion" style="width:auto;padding:0 10px;font-weight:900;">🧪×${rdata(P).d.potions}</button>`:""}</div>
+      ${bt.pTeam.length>1?`<div style="text-align:center;font-size:11px;font-weight:800;color:#6b7186;margin-top:2px;">👆 點小頭像可隨時換怪獸上場</div>`:""}
     </div>
     <div class="q-text" id="bt-q"></div><div class="choices" id="bt-c"></div>`;
 }
